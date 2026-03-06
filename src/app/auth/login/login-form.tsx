@@ -28,7 +28,16 @@ export default function LoginForm() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send OTP');
+        let errorMessage = 'Failed to send OTP';
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // Ignore parsing error
+        }
+        throw new Error(errorMessage);
       }
 
       const query = new URLSearchParams();
@@ -38,10 +47,10 @@ export default function LoginForm() {
       }
 
       router.push(`/auth/verify?${query.toString()}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      alert(error.message); // Show error to user natively for now
       setIsLoading(false);
-      // In a real app, show a toast error here
     }
   };
 
