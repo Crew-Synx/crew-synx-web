@@ -16,6 +16,7 @@ export default function VerifyForm() {
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
   const email = searchParams.get('email');
+  const registrationType = searchParams.get('registration_type');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +43,11 @@ export default function VerifyForm() {
       } else {
         localStorage.setItem('access_token', token);
         localStorage.setItem('refresh_token', data.data.refresh_token);
-        router.push('/dashboard');
+        if (registrationType === 'individual') {
+          router.push('/onboarding');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
       console.error(error);
