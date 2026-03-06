@@ -46,7 +46,7 @@ export default function LoginForm() {
   };
 
   return (
-    <Card className="shadow-lg border-0 bg-white">
+    <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
@@ -60,14 +60,14 @@ export default function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@company.com"
-              className="w-full p-3 h-12 bg-gray-50"
+              className="w-full p-3 h-12 bg-muted/50"
               disabled={isLoading}
             />
           </div>
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 text-base font-semibold"
             disabled={isLoading || !email}
           >
             {isLoading ? (
@@ -81,8 +81,8 @@ export default function LoginForm() {
           </Button>
 
           <div className="text-center text-sm">
-            <span className="text-gray-500">Don't have an account? </span>
-            <Link href="/auth/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <span className="text-muted-foreground">Don't have an account? </span>
+            <Link href="/auth/register" className="font-medium text-primary hover:text-primary/90">
               Register here
             </Link>
           </div>

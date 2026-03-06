@@ -55,39 +55,39 @@ export default function RegisterForm() {
   };
 
   return (
-    <Card className="shadow-lg border-0 bg-white">
+    <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName" className="font-semibold text-gray-700">First Name</Label>
+              <Label htmlFor="firstName" className="font-semibold">First Name</Label>
               <Input
                 id="firstName"
                 name="firstName"
                 required
                 value={formData.firstName}
                 onChange={handleInputChange}
-                className="w-full p-3 bg-gray-50"
+                className="w-full p-3 bg-muted/50"
                 disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName" className="font-semibold text-gray-700">Last Name</Label>
+              <Label htmlFor="lastName" className="font-semibold">Last Name</Label>
               <Input
                 id="lastName"
                 name="lastName"
                 required
                 value={formData.lastName}
                 onChange={handleInputChange}
-                className="w-full p-3 bg-gray-50"
+                className="w-full p-3 bg-muted/50"
                 disabled={isLoading}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="font-semibold text-gray-700">Email address</Label>
+            <Label htmlFor="email" className="font-semibold">Email address</Label>
             <Input
               id="email"
               name="email"
@@ -95,20 +95,20 @@ export default function RegisterForm() {
               required
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full p-3 bg-gray-50"
+              className="w-full p-3 bg-muted/50"
               disabled={isLoading}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="company" className="font-semibold text-gray-700">Organization Name</Label>
+            <Label htmlFor="company" className="font-semibold">Organization Name</Label>
             <Input
               id="company"
               name="company"
               required
               value={formData.company}
               onChange={handleInputChange}
-              className="w-full p-3 bg-gray-50"
+              className="w-full p-3 bg-muted/50"
               disabled={isLoading}
             />
           </div>
@@ -124,13 +124,13 @@ export default function RegisterForm() {
               htmlFor="terms"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              I agree to the <Link href="/terms" className="text-blue-600">Terms of Service</Link> and <Link href="/privacy" className="text-blue-600">Privacy Policy</Link>
+              I agree to the <Link href="/terms" className="text-primary hover:text-primary/90">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:text-primary/90">Privacy Policy</Link>
             </label>
           </div>
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 text-base font-semibold"
             disabled={isLoading || !agreed}
           >
             {isLoading ? (
@@ -144,8 +144,8 @@ export default function RegisterForm() {
           </Button>
 
           <div className="text-center text-sm mt-4">
-            <span className="text-gray-500">Already have an account? </span>
-            <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
+            <span className="text-muted-foreground">Already have an account? </span>
+            <Link href="/auth/login" className="font-medium text-primary hover:text-primary/90">
               Sign in
             </Link>
           </div>

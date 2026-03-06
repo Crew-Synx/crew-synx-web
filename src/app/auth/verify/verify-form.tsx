@@ -52,12 +52,12 @@ export default function VerifyForm() {
   };
 
   return (
-    <Card className="shadow-lg border-0 bg-white">
+    <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
 
           <div className="space-y-2">
-            <Label htmlFor="otp" className="font-semibold text-gray-700">6-Digit Code</Label>
+            <Label htmlFor="otp" className="font-semibold">6-Digit Code</Label>
             <Input
               id="otp"
               name="otp"
@@ -68,14 +68,14 @@ export default function VerifyForm() {
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
               placeholder="000000"
-              className="w-full text-center text-2xl tracking-widest p-3 h-14 bg-gray-50"
+              className="w-full text-center text-2xl tracking-widest p-3 h-14 bg-muted/50"
               disabled={isLoading}
             />
           </div>
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 text-base font-semibold"
             disabled={isLoading || otp.length < 6}
           >
             {isLoading ? (
@@ -89,14 +89,14 @@ export default function VerifyForm() {
           </Button>
 
           <div className="text-center text-sm">
-            <span className="text-gray-500">Didn't receive the code? </span>
-            <button type="button" className="font-medium text-blue-600 hover:text-blue-500">
+            <span className="text-muted-foreground">Didn't receive the code? </span>
+            <button type="button" className="font-medium text-primary hover:text-primary/90">
               Resend code
             </button>
           </div>
 
           <div className="text-center text-sm mt-2">
-            <Link href={redirectUri ? `/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}` : "/auth/login"} className="font-medium text-gray-500 hover:text-gray-700">
+            <Link href={redirectUri ? `/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}` : "/auth/login"} className="font-medium text-muted-foreground hover:text-foreground">
               Change email address
             </Link>
           </div>
