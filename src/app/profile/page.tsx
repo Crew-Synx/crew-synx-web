@@ -9,8 +9,7 @@ import { Loader2, User, LogOut, Settings, Mail, Building } from 'lucide-react';
 interface UserData {
   id: string;
   email: string;
-  first_name: string;
-  last_name: string;
+  name: string;
 }
 
 interface Organization {
@@ -131,11 +130,11 @@ export default function ProfilePage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-lg">
               <div className="h-16 w-16 bg-primary/10 text-primary rounded-full flex items-center justify-center text-2xl font-bold uppercase">
-                {profile.first_name ? profile.first_name[0] : profile.email[0]}
+                {profile.name ? profile.name[0] : profile.email[0]}
               </div>
               <div>
                 <h3 className="text-xl font-semibold">
-                  {profile.first_name} {profile.last_name}
+                  {profile.name || 'Anonymous User'}
                 </h3>
                 <p className="text-muted-foreground flex items-center mt-1">
                   <Mail className="h-4 w-4 mr-1" />
