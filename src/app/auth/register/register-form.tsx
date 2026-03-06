@@ -1,0 +1,157 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
+
+export default function RegisterForm() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    company: ''
+  });
+  const [agreed, setAgreed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/auth/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          organization_name: formData.company
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Registration failed');
+      }
+
+      // Route to verification page to enter the OTP sent during registration
+      router.push(`/auth/verify?email=${encodeURIComponent(formData.email)}`);
+    } catch (error) {
+      console.error(error);
+      setIsLoading(false);
+      // In a real app, show a toast error here
+    }
+  };
+
+  return (
+    <Card className="shadow-lg border-0 bg-white">
+      <CardContent className="pt-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName" className="font-semibold text-gray-700">First Name</Label>
+              <Input
+                id="firstName"
+                name="firstName"
+                required
+                value={formData.firstName}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-gray-50"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="font-semibold text-gray-700">Last Name</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                required
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-gray-50"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="font-semibold text-gray-700">Email address</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full p-3 bg-gray-50"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="company" className="font-semibold text-gray-700">Organization Name</Label>
+            <Input
+              id="company"
+              name="company"
+              required
+              value={formData.company}
+              onChange={handleInputChange}
+              className="w-full p-3 bg-gray-50"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="terms"
+              checked={agreed}
+              onCheckedChange={(c) => setAgreed(c as boolean)}
+              disabled={isLoading}
+            />
+            <label
+              htmlFor="terms"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I agree to the <Link href="/terms" className="text-blue-600">Terms of Service</Link> and <Link href="/privacy" className="text-blue-600">Privacy Policy</Link>
+            </label>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading || !agreed}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              'Sign Up'
+            )}
+          </Button>
+
+          <div className="text-center text-sm mt-4">
+            <span className="text-gray-500">Already have an account? </span>
+            <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
+              Sign in
+            </Link>
+          </div>
+
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
