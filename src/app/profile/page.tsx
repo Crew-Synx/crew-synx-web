@@ -37,7 +37,7 @@ export default function ProfilePage() {
       }
 
       try {
-        const response = await fetch('http://localhost:8000/api/v1/auth/me/', {
+        const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/me/', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -69,7 +69,7 @@ export default function ProfilePage() {
     const refreshToken = localStorage.getItem('refresh_token');
     if (refreshToken) {
       try {
-        await fetch('http://localhost:8000/api/v1/auth/logout/', {
+        await fetch('https://crewsynx.switchspace.in/api/v1/auth/logout/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
-const API = 'http://localhost:8000/api/v1';
+const API = 'https://crewsynx.switchspace.in/api/v1';
 
 interface UserProfile {
 	id: string;
@@ -440,8 +440,8 @@ export default function SettingsPage() {
 												key={t.value}
 												onClick={() => setTheme(t.value)}
 												className={`flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors ${mounted && theme === t.value
-														? 'border-primary bg-primary/5'
-														: 'border-border hover:border-border/80'
+													? 'border-primary bg-primary/5'
+													: 'border-border hover:border-border/80'
 													}`}
 											>
 												<t.icon className="h-5 w-5" />
@@ -726,8 +726,8 @@ export default function SettingsPage() {
 											key={org.id}
 											onClick={() => setDeleteOrgTarget(org)}
 											className={`w-full flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${deleteOrgTarget?.id === org.id
-													? 'border-destructive bg-destructive/5'
-													: 'border-border hover:border-border/80'
+												? 'border-destructive bg-destructive/5'
+												: 'border-border hover:border-border/80'
 												}`}
 										>
 											<Building2 className="h-4 w-4 shrink-0" />

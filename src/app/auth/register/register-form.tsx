@@ -44,7 +44,7 @@ export default function RegisterForm({ registrationType, onBack }: RegisterFormP
         payload.organization_name = formData.company;
       }
 
-      const response = await fetch('http://localhost:8000/api/v1/auth/register/', {
+      const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/register/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

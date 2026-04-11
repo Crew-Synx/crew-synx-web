@@ -48,7 +48,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const API = 'http://localhost:8000/api/v1';
+const API = 'https://crewsynx.switchspace.in/api/v1';
 
 interface UserData {
 	id: string;
