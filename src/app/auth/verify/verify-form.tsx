@@ -12,11 +12,28 @@ import Link from 'next/link';
 export default function VerifyForm() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
   const email = searchParams.get('email');
   const registrationType = searchParams.get('registration_type');
+
+  const handleResend = async () => {
+    if (!email || isResending) return;
+    setIsResending(true);
+    try {
+      await fetch('https://crewsynx.switchspace.in/api/v1/auth/request-otp/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch (error) {
+      console.error('Failed to resend OTP:', error);
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,8 +112,8 @@ export default function VerifyForm() {
 
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Didn't receive the code? </span>
-            <button type="button" className="font-medium text-primary hover:text-primary/90">
-              Resend code
+            <button type="button" onClick={handleResend} disabled={isResending} className="font-medium text-primary hover:text-primary/90 disabled:opacity-50">
+              {isResending ? 'Sending...' : 'Resend code'}
             </button>
           </div>
 
