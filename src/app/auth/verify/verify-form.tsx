@@ -54,9 +54,15 @@ export default function VerifyForm() {
       const token = data.data.access_token;
 
       if (redirectUri) {
-        const link = new URL(redirectUri);
-        link.searchParams.set('token', token);
-        window.location.href = link.toString();
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('refresh_token', data.data.refresh_token);
+        // Support both absolute URLs and relative paths
+        try {
+          const link = new URL(redirectUri, window.location.origin);
+          router.push(link.pathname + link.search);
+        } catch {
+          router.push(redirectUri);
+        }
       } else {
         localStorage.setItem('access_token', token);
         localStorage.setItem('refresh_token', data.data.refresh_token);

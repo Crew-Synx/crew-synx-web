@@ -40,6 +40,7 @@ import {
 	MoreHorizontal,
 	Copy,
 	Check,
+	Bell,
 } from 'lucide-react';
 import {
 	DropdownMenu,
@@ -85,6 +86,17 @@ interface Role {
 	is_system: boolean;
 }
 
+interface NotificationItem {
+	id: string;
+	notification_type: string;
+	title: string;
+	message: string;
+	read: boolean;
+	created_at: string;
+	organization_name?: string;
+	organization_id?: string;
+}
+
 function getToken() {
 	return localStorage.getItem('access_token');
 }
@@ -120,6 +132,11 @@ export default function DashboardPage() {
 
 	// Copy invite code
 	const [copied, setCopied] = useState(false);
+
+	// Notifications
+	const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+	const [unreadCount, setUnreadCount] = useState(0);
+	const [notifOpen, setNotifOpen] = useState(false);
 
 	const router = useRouter();
 
@@ -190,6 +207,67 @@ export default function DashboardPage() {
 
 		init();
 	}, [router]);
+
+	// Fetch notifications and unread count, poll every 30s
+	const fetchNotifications = useCallback(async () => {
+		try {
+			const [countRes, listRes] = await Promise.all([
+				fetch(`${API}/notifications/global-unread-count/`, { headers: authHeaders() }),
+				fetch(`${API}/notifications/all/`, { headers: authHeaders() }),
+			]);
+			if (countRes.ok) {
+				const data = await countRes.json();
+				setUnreadCount(data.data?.unread_count ?? 0);
+			}
+			if (listRes.ok) {
+				const data = await listRes.json();
+				setNotifications(data.data || []);
+			}
+		} catch {
+			// Silently fail
+		}
+	}, []);
+
+	useEffect(() => {
+		if (!loading) {
+			fetchNotifications();
+			const interval = setInterval(() => {
+				fetchNotifications();
+				// Also refresh org list to pick up new memberships
+				fetch(`${API}/organizations/`, { headers: authHeaders() })
+					.then((res) => res.json())
+					.then((data) => {
+						const orgList = data.data || [];
+						setOrgs((prev) => {
+							if (orgList.length !== prev.length) {
+								// New org detected — update list
+								if (!selectedOrg && orgList.length > 0) {
+									setSelectedOrg(orgList[0]);
+									setOrgName(orgList[0].name);
+								}
+								return orgList;
+							}
+							return prev;
+						});
+					})
+					.catch(() => { });
+			}, 30000);
+			return () => clearInterval(interval);
+		}
+	}, [loading, fetchNotifications]);
+
+	const handleMarkNotifRead = async (notifId: string, orgId: string) => {
+		try {
+			await fetch(`${API}/notifications/${notifId}/read/`, {
+				method: 'POST',
+				headers: authHeaders(orgId),
+			});
+			setNotifications((prev) => prev.map((n) => n.id === notifId ? { ...n, read: true } : n));
+			setUnreadCount((prev) => Math.max(0, prev - 1));
+		} catch {
+			// Silently fail
+		}
+	};
 
 	useEffect(() => {
 		if (selectedOrg) {
@@ -327,6 +405,51 @@ export default function DashboardPage() {
 						<span className="text-sm text-muted-foreground hidden sm:inline">/ Management</span>
 					</div>
 					<div className="flex items-center gap-2">
+						{/* Notification Bell */}
+						<DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="sm" className="relative">
+									<Bell className="h-4 w-4" />
+									{unreadCount > 0 && (
+										<span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+											{unreadCount > 9 ? '9+' : unreadCount}
+										</span>
+									)}
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+								{notifications.length === 0 ? (
+									<div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
+								) : (
+									notifications.slice(0, 15).map((notif) => (
+										<DropdownMenuItem
+											key={notif.id}
+											className={`flex flex-col items-start gap-1 p-3 cursor-pointer ${!notif.read ? 'bg-accent/50' : ''}`}
+											onClick={() => {
+												if (!notif.read && notif.organization_id) {
+													handleMarkNotifRead(notif.id, notif.organization_id);
+												}
+												// Switch to the notification's org if it exists
+												if (notif.organization_id) {
+													const org = orgs.find((o) => o.id === notif.organization_id);
+													if (org) {
+														setSelectedOrg(org);
+														setOrgName(org.name);
+													}
+												}
+												setNotifOpen(false);
+											}}
+										>
+											<span className="text-sm font-medium leading-tight">{notif.title}</span>
+											<span className="text-xs text-muted-foreground leading-tight">{notif.message}</span>
+											{notif.organization_name && (
+												<span className="text-[10px] text-muted-foreground/70">{notif.organization_name}</span>
+											)}
+										</DropdownMenuItem>
+									))
+								)}
+							</DropdownMenuContent>
+						</DropdownMenu>
 						<Button variant="ghost" size="sm" asChild>
 							<Link href="/settings">
 								<Settings className="mr-2 h-4 w-4" />
