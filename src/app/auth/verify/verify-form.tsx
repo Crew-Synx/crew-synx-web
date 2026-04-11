@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,14 +13,21 @@ export default function VerifyForm() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(30);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
   const email = searchParams.get('email');
   const registrationType = searchParams.get('registration_type');
 
-  const handleResend = async () => {
-    if (!email || isResending) return;
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = setTimeout(() => setResendCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
+
+  const handleResend = useCallback(async () => {
+    if (!email || isResending || resendCountdown > 0) return;
     setIsResending(true);
     try {
       await fetch('https://crewsynx.switchspace.in/api/v1/auth/request-otp/', {
@@ -28,12 +35,13 @@ export default function VerifyForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+      setResendCountdown(30);
     } catch (error) {
       console.error('Failed to resend OTP:', error);
     } finally {
       setIsResending(false);
     }
-  };
+  }, [email, isResending, resendCountdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,9 +126,13 @@ export default function VerifyForm() {
 
           <div className="text-center text-sm">
             <span className="text-muted-foreground">Didn't receive the code? </span>
-            <button type="button" onClick={handleResend} disabled={isResending} className="font-medium text-primary hover:text-primary/90 disabled:opacity-50">
-              {isResending ? 'Sending...' : 'Resend code'}
-            </button>
+            {resendCountdown > 0 ? (
+              <span className="text-muted-foreground">Resend in {resendCountdown}s</span>
+            ) : (
+              <button type="button" onClick={handleResend} disabled={isResending} className="font-medium text-primary hover:text-primary/90 disabled:opacity-50">
+                {isResending ? 'Sending...' : 'Resend code'}
+              </button>
+            )}
           </div>
 
           <div className="text-center text-sm mt-2">
