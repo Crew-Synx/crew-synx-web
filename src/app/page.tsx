@@ -278,15 +278,18 @@ export default function Home() {
                 </Button>
               </CardContent>
             </Card>
-            <Card className="border-border/50 border-dashed opacity-60">
+            <Card className="border-border/50 transition-shadow hover:shadow-md">
               <CardContent className="pt-6 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-muted">
-                  <Smartphone className="h-7 w-7 text-muted-foreground" />
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+                  <Smartphone className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="mt-4 text-lg font-semibold">Mobile</h3>
-                <p className="mt-1 text-sm text-muted-foreground">iOS &amp; Android</p>
-                <Button className="mt-4 w-full" variant="outline" disabled>
-                  Coming Soon
+                <h3 className="mt-4 text-lg font-semibold">Android</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Android 6.0 or later</p>
+                <Button className="mt-4 w-full" asChild>
+                  <a href="https://pub-e1a3af3b0acd49b389d9ea16ce02de48.r2.dev/Downloads/android/CrewSynx.apk">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download .apk
+                  </a>
                 </Button>
               </CardContent>
             </Card>
