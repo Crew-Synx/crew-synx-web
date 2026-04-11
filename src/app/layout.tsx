@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ModeToggle } from "@/components/mode-toggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Crewsynx",
-  description: "Crewsynx - your go to solution for corporate",
+  title: "CrewSynx - Team Workspace Platform",
+  description: "The all-in-one workspace for modern teams. Manage projects, track attendance, and collaborate seamlessly.",
 };
 
 export default function RootLayout({
@@ -36,7 +35,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <ModeToggle />
         </ThemeProvider>
       </body>
     </html>
