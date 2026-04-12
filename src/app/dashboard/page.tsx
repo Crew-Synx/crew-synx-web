@@ -41,6 +41,10 @@ import {
 	Copy,
 	Check,
 	Bell,
+	Briefcase,
+	Layers,
+	Receipt,
+	GitBranch,
 } from 'lucide-react';
 import {
 	DropdownMenu,
@@ -271,6 +275,7 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		if (selectedOrg) {
+			localStorage.setItem('selected_org', JSON.stringify(selectedOrg));
 			fetchMembers(selectedOrg.id);
 		}
 	}, [selectedOrg, fetchMembers]);
@@ -504,222 +509,280 @@ export default function DashboardPage() {
 				)}
 
 				{selectedOrg ? (
-					<div className="grid gap-6 lg:grid-cols-3">
-						{/* Left: Organization Settings */}
-						<div className="space-y-6">
-							<Card className="border-border/50">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-2 text-lg">
-										<Building2 className="h-5 w-5" />
-										Organization
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="space-y-4">
-									<div className="space-y-2">
-										<Label htmlFor="orgName">Name</Label>
-										<Input
-											id="orgName"
-											value={orgName}
-											onChange={(e) => setOrgName(e.target.value)}
-										/>
-									</div>
-									<Button
-										size="sm"
-										onClick={handleSaveOrg}
-										disabled={savingOrg || orgName === selectedOrg.name}
-									>
-										{savingOrg ? (
-											<>
-												<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-												Saving...
-											</>
-										) : orgSaved ? (
-											<>
-												<Check className="mr-2 h-3.5 w-3.5" />
-												Saved
-											</>
-										) : (
-											'Save'
-										)}
-									</Button>
-
-									{selectedOrg.invite_code && (
-										<>
-											<Separator />
-											<div className="space-y-2">
-												<Label className="text-xs text-muted-foreground">Invite Code</Label>
-												<div className="flex items-center gap-2">
-													<code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono truncate">
-														{selectedOrg.invite_code}
-													</code>
-													<Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleCopyInviteCode}>
-														{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-													</Button>
-												</div>
-											</div>
-										</>
-									)}
-
-									<Separator />
-									<div className="text-xs text-muted-foreground">
-										<span className="font-medium">Slug:</span> {selectedOrg.slug}
-									</div>
-								</CardContent>
-							</Card>
+					<div className="space-y-6">
+						{/* HRMS Quick Access */}
+						<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+							<Link href="/employees" className="group">
+								<Card className="border-border/50 transition-colors group-hover:border-primary/50">
+									<CardContent className="flex items-center gap-3 p-4">
+										<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+											<Briefcase className="h-5 w-5" />
+										</div>
+										<div>
+											<p className="text-sm font-medium">Employees</p>
+											<p className="text-xs text-muted-foreground">Directory & onboard</p>
+										</div>
+									</CardContent>
+								</Card>
+							</Link>
+							<Link href="/branches" className="group">
+								<Card className="border-border/50 transition-colors group-hover:border-primary/50">
+									<CardContent className="flex items-center gap-3 p-4">
+										<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400">
+											<GitBranch className="h-5 w-5" />
+										</div>
+										<div>
+											<p className="text-sm font-medium">Branches</p>
+											<p className="text-xs text-muted-foreground">Offices & locations</p>
+										</div>
+									</CardContent>
+								</Card>
+							</Link>
+							<Link href="/departments" className="group">
+								<Card className="border-border/50 transition-colors group-hover:border-primary/50">
+									<CardContent className="flex items-center gap-3 p-4">
+										<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
+											<Layers className="h-5 w-5" />
+										</div>
+										<div>
+											<p className="text-sm font-medium">Departments</p>
+											<p className="text-xs text-muted-foreground">Org structure</p>
+										</div>
+									</CardContent>
+								</Card>
+							</Link>
+							<Link href="/expenses" className="group">
+								<Card className="border-border/50 transition-colors group-hover:border-primary/50">
+									<CardContent className="flex items-center gap-3 p-4">
+										<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-950 dark:text-orange-400">
+											<Receipt className="h-5 w-5" />
+										</div>
+										<div>
+											<p className="text-sm font-medium">Expenses</p>
+											<p className="text-xs text-muted-foreground">Claims & reimburse</p>
+										</div>
+									</CardContent>
+								</Card>
+							</Link>
 						</div>
 
-						{/* Right: Members */}
-						<div className="lg:col-span-2">
-							<Card className="border-border/50">
-								<CardHeader>
-									<div className="flex items-center justify-between">
-										<div>
-											<CardTitle className="flex items-center gap-2 text-lg">
-												<Users className="h-5 w-5" />
-												Team Members
-											</CardTitle>
-											<CardDescription>
-												{members.length} member{members.length !== 1 ? 's' : ''}
-											</CardDescription>
-										</div>
-										<Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-											<DialogTrigger asChild>
-												<Button size="sm">
-													<UserPlus className="mr-2 h-4 w-4" />
-													Invite
-												</Button>
-											</DialogTrigger>
-											<DialogContent>
-												<DialogHeader>
-													<DialogTitle>Invite a team member</DialogTitle>
-													<DialogDescription>
-														Send an invitation to join this organization.
-													</DialogDescription>
-												</DialogHeader>
-												<div className="space-y-4 py-2">
-													<div className="space-y-2">
-														<Label htmlFor="invite-email">Email address</Label>
-														<Input
-															id="invite-email"
-															type="email"
-															placeholder="colleague@company.com"
-															value={inviteEmail}
-															onChange={(e) => setInviteEmail(e.target.value)}
-														/>
-													</div>
-													{roles.length > 0 && (
-														<div className="space-y-2">
-															<Label>Role</Label>
-															<Select value={inviteRole} onValueChange={setInviteRole}>
-																<SelectTrigger>
-																	<SelectValue placeholder="Select a role" />
-																</SelectTrigger>
-																<SelectContent>
-																	{roles.filter((r) => r.name.toLowerCase() !== 'owner').map((role) => (
-																		<SelectItem key={role.id} value={role.id}>
-																			{role.name}
-																		</SelectItem>
-																	))}
-																</SelectContent>
-															</Select>
-														</div>
-													)}
-												</div>
-												<DialogFooter>
-													<Button variant="outline" onClick={() => setInviteOpen(false)}>
-														Cancel
-													</Button>
-													<Button onClick={handleInviteMember} disabled={inviting || !inviteEmail}>
-														{inviting ? (
-															<>
-																<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-																Inviting...
-															</>
-														) : (
-															<>
-																<Mail className="mr-2 h-4 w-4" />
-																Send Invite
-															</>
-														)}
-													</Button>
-												</DialogFooter>
-											</DialogContent>
-										</Dialog>
-									</div>
-								</CardHeader>
-								<CardContent>
-									{membersLoading ? (
-										<div className="flex justify-center py-8">
-											<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-										</div>
-									) : members.length === 0 ? (
-										<div className="flex flex-col items-center justify-center py-12 text-center">
-											<Users className="h-10 w-10 text-muted-foreground/40" />
-											<p className="mt-3 text-sm text-muted-foreground">
-												No members found. Invite someone to get started.
-											</p>
-										</div>
-									) : (
+						<div className="grid gap-6 lg:grid-cols-3">
+							{/* Left: Organization Settings */}
+							<div className="space-y-6">
+								<Card className="border-border/50">
+									<CardHeader>
+										<CardTitle className="flex items-center gap-2 text-lg">
+											<Building2 className="h-5 w-5" />
+											Organization
+										</CardTitle>
+									</CardHeader>
+									<CardContent className="space-y-4">
 										<div className="space-y-2">
-											{members.map((member) => (
-												<div
-													key={member.id}
-													className="flex items-center justify-between rounded-lg border border-border/50 p-3"
-												>
-													<div className="flex items-center gap-3 min-w-0">
-														<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-															{member.user.name?.charAt(0)?.toUpperCase() || member.user.email.charAt(0).toUpperCase()}
-														</div>
-														<div className="min-w-0">
-															<p className="text-sm font-medium truncate">
-																{member.user.name || member.user.email}
-																{member.user.id === user?.id && (
-																	<span className="ml-1.5 text-xs text-muted-foreground">(you)</span>
-																)}
-															</p>
-															<p className="text-xs text-muted-foreground truncate">{member.user.email}</p>
-														</div>
-													</div>
-													<div className="flex items-center gap-2 shrink-0">
-														<Badge variant="secondary" className="text-xs gap-1">
-															{getRoleIcon(member.role.name)}
-															{member.role.name}
-														</Badge>
-														{member.user.id !== user?.id && (
-															<DropdownMenu>
-																<DropdownMenuTrigger asChild>
-																	<Button variant="ghost" size="icon" className="h-8 w-8">
-																		<MoreHorizontal className="h-4 w-4" />
-																	</Button>
-																</DropdownMenuTrigger>
-																<DropdownMenuContent align="end">
-																	{roles
-																		.filter((r) => r.id !== member.role.id && r.name.toLowerCase() !== 'owner')
-																		.map((role) => (
-																			<DropdownMenuItem
-																				key={role.id}
-																				onClick={() => handleUpdateMemberRole(member.id, role.id)}
-																			>
-																				Change to {role.name}
-																			</DropdownMenuItem>
-																		))}
-																	<DropdownMenuItem
-																		className="text-destructive focus:text-destructive"
-																		onClick={() => handleRemoveMember(member.id)}
-																	>
-																		<Trash2 className="mr-2 h-3.5 w-3.5" />
-																		Remove
-																	</DropdownMenuItem>
-																</DropdownMenuContent>
-															</DropdownMenu>
-														)}
+											<Label htmlFor="orgName">Name</Label>
+											<Input
+												id="orgName"
+												value={orgName}
+												onChange={(e) => setOrgName(e.target.value)}
+											/>
+										</div>
+										<Button
+											size="sm"
+											onClick={handleSaveOrg}
+											disabled={savingOrg || orgName === selectedOrg.name}
+										>
+											{savingOrg ? (
+												<>
+													<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+													Saving...
+												</>
+											) : orgSaved ? (
+												<>
+													<Check className="mr-2 h-3.5 w-3.5" />
+													Saved
+												</>
+											) : (
+												'Save'
+											)}
+										</Button>
+
+										{selectedOrg.invite_code && (
+											<>
+												<Separator />
+												<div className="space-y-2">
+													<Label className="text-xs text-muted-foreground">Invite Code</Label>
+													<div className="flex items-center gap-2">
+														<code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono truncate">
+															{selectedOrg.invite_code}
+														</code>
+														<Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleCopyInviteCode}>
+															{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+														</Button>
 													</div>
 												</div>
-											))}
+											</>
+										)}
+
+										<Separator />
+										<div className="text-xs text-muted-foreground">
+											<span className="font-medium">Slug:</span> {selectedOrg.slug}
 										</div>
-									)}
-								</CardContent>
-							</Card>
+									</CardContent>
+								</Card>
+							</div>
+
+							{/* Right: Members */}
+							<div className="lg:col-span-2">
+								<Card className="border-border/50">
+									<CardHeader>
+										<div className="flex items-center justify-between">
+											<div>
+												<CardTitle className="flex items-center gap-2 text-lg">
+													<Users className="h-5 w-5" />
+													Team Members
+												</CardTitle>
+												<CardDescription>
+													{members.length} member{members.length !== 1 ? 's' : ''}
+												</CardDescription>
+											</div>
+											<Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+												<DialogTrigger asChild>
+													<Button size="sm">
+														<UserPlus className="mr-2 h-4 w-4" />
+														Invite
+													</Button>
+												</DialogTrigger>
+												<DialogContent>
+													<DialogHeader>
+														<DialogTitle>Invite a team member</DialogTitle>
+														<DialogDescription>
+															Send an invitation to join this organization.
+														</DialogDescription>
+													</DialogHeader>
+													<div className="space-y-4 py-2">
+														<div className="space-y-2">
+															<Label htmlFor="invite-email">Email address</Label>
+															<Input
+																id="invite-email"
+																type="email"
+																placeholder="colleague@company.com"
+																value={inviteEmail}
+																onChange={(e) => setInviteEmail(e.target.value)}
+															/>
+														</div>
+														{roles.length > 0 && (
+															<div className="space-y-2">
+																<Label>Role</Label>
+																<Select value={inviteRole} onValueChange={setInviteRole}>
+																	<SelectTrigger>
+																		<SelectValue placeholder="Select a role" />
+																	</SelectTrigger>
+																	<SelectContent>
+																		{roles.filter((r) => r.name.toLowerCase() !== 'owner').map((role) => (
+																			<SelectItem key={role.id} value={role.id}>
+																				{role.name}
+																			</SelectItem>
+																		))}
+																	</SelectContent>
+																</Select>
+															</div>
+														)}
+													</div>
+													<DialogFooter>
+														<Button variant="outline" onClick={() => setInviteOpen(false)}>
+															Cancel
+														</Button>
+														<Button onClick={handleInviteMember} disabled={inviting || !inviteEmail}>
+															{inviting ? (
+																<>
+																	<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+																	Inviting...
+																</>
+															) : (
+																<>
+																	<Mail className="mr-2 h-4 w-4" />
+																	Send Invite
+																</>
+															)}
+														</Button>
+													</DialogFooter>
+												</DialogContent>
+											</Dialog>
+										</div>
+									</CardHeader>
+									<CardContent>
+										{membersLoading ? (
+											<div className="flex justify-center py-8">
+												<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+											</div>
+										) : members.length === 0 ? (
+											<div className="flex flex-col items-center justify-center py-12 text-center">
+												<Users className="h-10 w-10 text-muted-foreground/40" />
+												<p className="mt-3 text-sm text-muted-foreground">
+													No members found. Invite someone to get started.
+												</p>
+											</div>
+										) : (
+											<div className="space-y-2">
+												{members.map((member) => (
+													<div
+														key={member.id}
+														className="flex items-center justify-between rounded-lg border border-border/50 p-3"
+													>
+														<div className="flex items-center gap-3 min-w-0">
+															<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+																{member.user.name?.charAt(0)?.toUpperCase() || member.user.email.charAt(0).toUpperCase()}
+															</div>
+															<div className="min-w-0">
+																<p className="text-sm font-medium truncate">
+																	{member.user.name || member.user.email}
+																	{member.user.id === user?.id && (
+																		<span className="ml-1.5 text-xs text-muted-foreground">(you)</span>
+																	)}
+																</p>
+																<p className="text-xs text-muted-foreground truncate">{member.user.email}</p>
+															</div>
+														</div>
+														<div className="flex items-center gap-2 shrink-0">
+															<Badge variant="secondary" className="text-xs gap-1">
+																{getRoleIcon(member.role.name)}
+																{member.role.name}
+															</Badge>
+															{member.user.id !== user?.id && (
+																<DropdownMenu>
+																	<DropdownMenuTrigger asChild>
+																		<Button variant="ghost" size="icon" className="h-8 w-8">
+																			<MoreHorizontal className="h-4 w-4" />
+																		</Button>
+																	</DropdownMenuTrigger>
+																	<DropdownMenuContent align="end">
+																		{roles
+																			.filter((r) => r.id !== member.role.id && r.name.toLowerCase() !== 'owner')
+																			.map((role) => (
+																				<DropdownMenuItem
+																					key={role.id}
+																					onClick={() => handleUpdateMemberRole(member.id, role.id)}
+																				>
+																					Change to {role.name}
+																				</DropdownMenuItem>
+																			))}
+																		<DropdownMenuItem
+																			className="text-destructive focus:text-destructive"
+																			onClick={() => handleRemoveMember(member.id)}
+																		>
+																			<Trash2 className="mr-2 h-3.5 w-3.5" />
+																			Remove
+																		</DropdownMenuItem>
+																	</DropdownMenuContent>
+																</DropdownMenu>
+															)}
+														</div>
+													</div>
+												))}
+											</div>
+										)}
+									</CardContent>
+								</Card>
+							</div>
 						</div>
 					</div>
 				) : (
