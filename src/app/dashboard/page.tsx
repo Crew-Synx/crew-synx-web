@@ -198,8 +198,25 @@ export default function DashboardPage() {
 					const orgList = data.data || [];
 					setOrgs(orgList);
 					if (orgList.length > 0) {
-						setSelectedOrg(orgList[0]);
-						setOrgName(orgList[0].name);
+						const org = orgList[0];
+						setSelectedOrg(org);
+						setOrgName(org.name);
+
+						// Redirect to setup wizard if org has no branches yet (first-time setup)
+						if (!localStorage.getItem('setup_complete')) {
+							const branchRes = await fetch(`${API}/organizations/${org.id}/branches/`, {
+								headers: authHeaders(org.id),
+							});
+							if (branchRes.ok) {
+								const branchData = await branchRes.json();
+								const branchList = branchData.data || [];
+								if (branchList.length === 0) {
+									router.push('/setup');
+									return;
+								}
+								localStorage.setItem('setup_complete', 'true');
+							}
+						}
 					}
 				}
 			} catch {

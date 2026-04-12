@@ -7,15 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-interface RegisterFormProps {
-  registrationType: 'individual' | 'organization';
-  onBack: () => void;
-}
-
-export default function RegisterForm({ registrationType, onBack }: RegisterFormProps) {
+export default function RegisterForm() {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -38,11 +33,9 @@ export default function RegisterForm({ registrationType, onBack }: RegisterFormP
       const payload: Record<string, string> = {
         email: formData.email,
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        registration_type: registrationType,
+        registration_type: 'organization',
+        organization_name: formData.company,
       };
-      if (registrationType === 'organization') {
-        payload.organization_name = formData.company;
-      }
 
       const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/register/', {
         method: 'POST',
@@ -57,7 +50,7 @@ export default function RegisterForm({ registrationType, onBack }: RegisterFormP
 
       const query = new URLSearchParams();
       query.set('email', formData.email);
-      query.set('registration_type', registrationType);
+      query.set('registration_type', 'organization');
       router.push(`/auth/verify?${query.toString()}`);
     } catch (error) {
       console.error(error);
@@ -69,15 +62,6 @@ export default function RegisterForm({ registrationType, onBack }: RegisterFormP
     <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
-
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -120,20 +104,18 @@ export default function RegisterForm({ registrationType, onBack }: RegisterFormP
             />
           </div>
 
-          {registrationType === 'organization' && (
-            <div className="space-y-2">
-              <Label htmlFor="company" className="font-semibold">Organization Name</Label>
-              <Input
-                id="company"
-                name="company"
-                required
-                value={formData.company}
-                onChange={handleInputChange}
-                className="w-full p-3 bg-muted/50"
-                disabled={isLoading}
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="company" className="font-semibold">Organization Name</Label>
+            <Input
+              id="company"
+              name="company"
+              required
+              value={formData.company}
+              onChange={handleInputChange}
+              className="w-full p-3 bg-muted/50"
+              disabled={isLoading}
+            />
+          </div>
 
           <div className="flex items-center space-x-2">
             <Checkbox

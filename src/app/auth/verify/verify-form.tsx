@@ -74,8 +74,8 @@ export default function VerifyForm() {
       } else {
         localStorage.setItem('access_token', token);
         localStorage.setItem('refresh_token', data.data.refresh_token);
-        if (registrationType === 'individual') {
-          router.push('/onboarding');
+        if (registrationType === 'organization') {
+          router.push('/setup');
         } else {
           router.push('/dashboard');
         }
