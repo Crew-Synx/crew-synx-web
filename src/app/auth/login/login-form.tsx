@@ -10,7 +10,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
+  const [userId, setUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,7 +24,7 @@ export default function LoginForm() {
       const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/request-otp/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ user_id: userId }),
       });
 
       if (!response.ok) {
@@ -41,7 +41,7 @@ export default function LoginForm() {
       }
 
       const query = new URLSearchParams();
-      query.set('email', email);
+      query.set('user_id', userId);
       if (redirectUri) {
         query.set('redirect_uri', redirectUri);
       }
@@ -59,16 +59,16 @@ export default function LoginForm() {
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="email" className="font-semibold text-gray-700">Email address</Label>
+            <Label htmlFor="userId" className="font-semibold text-gray-700">Employee ID</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
+              id="userId"
+              name="userId"
+              type="text"
+              autoComplete="username"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              placeholder="e.g. 001-BLR"
               className="w-full p-3 h-12 bg-muted/50"
               disabled={isLoading}
             />
@@ -77,7 +77,7 @@ export default function LoginForm() {
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold"
-            disabled={isLoading || !email}
+            disabled={isLoading || !userId}
           >
             {isLoading ? (
               <>
@@ -85,7 +85,7 @@ export default function LoginForm() {
                 Sending OTP...
               </>
             ) : (
-              'Continue with Email'
+              'Continue with Employee ID'
             )}
           </Button>
 

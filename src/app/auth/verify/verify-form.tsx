@@ -17,7 +17,7 @@ export default function VerifyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
-  const email = searchParams.get('email');
+  const userId = searchParams.get('user_id');
   const registrationType = searchParams.get('registration_type');
 
   useEffect(() => {
@@ -27,13 +27,13 @@ export default function VerifyForm() {
   }, [resendCountdown]);
 
   const handleResend = useCallback(async () => {
-    if (!email || isResending || resendCountdown > 0) return;
+    if (!userId || isResending || resendCountdown > 0) return;
     setIsResending(true);
     try {
       await fetch('https://crewsynx.switchspace.in/api/v1/auth/request-otp/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ user_id: userId }),
       });
       setResendCountdown(30);
     } catch (error) {
@@ -41,7 +41,7 @@ export default function VerifyForm() {
     } finally {
       setIsResending(false);
     }
-  }, [email, isResending, resendCountdown]);
+  }, [userId, isResending, resendCountdown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +51,7 @@ export default function VerifyForm() {
       const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/verify-otp/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ user_id: userId, otp }),
       });
 
       if (!response.ok) {
@@ -137,7 +137,7 @@ export default function VerifyForm() {
 
           <div className="text-center text-sm mt-2">
             <Link href={redirectUri ? `/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}` : "/auth/login"} className="font-medium text-muted-foreground hover:text-foreground">
-              Change email address
+              Change Employee ID
             </Link>
           </div>
 

@@ -182,3 +182,35 @@ export interface MemberListItem {
 	joining_date?: string;
 	joined_at: string;
 }
+
+// ─── Attendance ─────────────────────────────────────────────────────
+
+export interface Attendance {
+	id: string;
+	user: string;
+	user_name: string;
+	date: string;
+	status: string;
+	check_in_time?: string;
+	check_out_time?: string;
+	check_in_method?: string;
+	check_in_latitude?: number;
+	check_in_longitude?: number;
+	notes?: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface RemoteCheckInRequest {
+	id: string;
+	user: string;
+	user_name: string;
+	date: string;
+	reason: string;
+	location_description?: string;
+	status: string;
+	reviewed_by?: string;
+	reviewer_name?: string;
+	review_note?: string;
+	created_at: string;
+}
