@@ -778,7 +778,7 @@ export default function DashboardPage() {
 																{getRoleIcon(member.role?.name)}
 																{member.role?.name || 'No role'}
 															</Badge>
-															{member.user?.id !== user?.id && (
+															{member.user?.id !== user?.id && member.role?.name?.toLowerCase() !== 'owner' && (
 																<DropdownMenu>
 																	<DropdownMenuTrigger asChild>
 																		<Button variant="ghost" size="icon" className="h-8 w-8">
