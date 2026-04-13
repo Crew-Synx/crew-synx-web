@@ -761,16 +761,16 @@ export default function DashboardPage() {
 													>
 														<div className="flex items-center gap-3 min-w-0">
 															<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-																{member.user.name?.charAt(0)?.toUpperCase() || member.user.email.charAt(0).toUpperCase()}
+																{member.user?.name?.charAt(0)?.toUpperCase() || member.user?.email?.charAt(0)?.toUpperCase() || '?'}
 															</div>
 															<div className="min-w-0">
 																<p className="text-sm font-medium truncate">
-																	{member.user.name || member.user.email}
-																	{member.user.id === user?.id && (
+																	{member.user?.name || member.user?.email || 'Unknown'}
+																	{member.user?.id === user?.id && (
 																		<span className="ml-1.5 text-xs text-muted-foreground">(you)</span>
 																	)}
 																</p>
-																<p className="text-xs text-muted-foreground truncate">{member.user.email}</p>
+																<p className="text-xs text-muted-foreground truncate">{member.user?.email}</p>
 															</div>
 														</div>
 														<div className="flex items-center gap-2 shrink-0">
@@ -778,7 +778,7 @@ export default function DashboardPage() {
 																{getRoleIcon(member.role.name)}
 																{member.role.name}
 															</Badge>
-															{member.user.id !== user?.id && (
+															{member.user?.id !== user?.id && (
 																<DropdownMenu>
 																	<DropdownMenuTrigger asChild>
 																		<Button variant="ghost" size="icon" className="h-8 w-8">
