@@ -9,8 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+	Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
 	Loader2, Shield, Building2, Layers, Briefcase,
-	Plus, Trash2, Check, ChevronRight, ArrowRight, Rocket,
+	Plus, Trash2, Check, ChevronRight, ArrowRight, Rocket, Copy,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
@@ -26,6 +29,15 @@ interface RoleItem {
 	id: string;
 	name: string;
 	priority: number;
+	permissions?: string[];
+}
+
+interface RoleTemplate {
+	name: string;
+	description: string;
+	priority: number;
+	permissions: string[];
+	already_applied: boolean;
 }
 
 interface BranchItem {
@@ -48,15 +60,17 @@ interface DesignationItem {
 	id: string;
 	title: string;
 	level: number;
+	department: string | null;
+	department_name: string | null;
 }
 
 /* ─── Steps ──────────────────────────────────────────────────────── */
 
 const STEPS = [
-	{ key: 'roles', label: 'Roles', icon: Shield, description: 'Review & customize roles' },
-	{ key: 'branches', label: 'Branches', icon: Building2, description: 'Add office locations' },
-	{ key: 'departments', label: 'Departments', icon: Layers, description: 'Create departments' },
-	{ key: 'designations', label: 'Designations', icon: Briefcase, description: 'Define designations' },
+	{ key: 'roles', label: 'Roles', icon: Shield, description: 'Pick role templates', optional: false },
+	{ key: 'branches', label: 'Branches', icon: Building2, description: 'Add office locations', optional: true },
+	{ key: 'departments', label: 'Departments', icon: Layers, description: 'Create departments', optional: false },
+	{ key: 'designations', label: 'Job Roles', icon: Briefcase, description: 'Define job roles', optional: false },
 ] as const;
 
 type StepKey = typeof STEPS[number]['key'];
@@ -71,6 +85,7 @@ export default function SetupPage() {
 
 	// Data for each step
 	const [roles, setRoles] = useState<RoleItem[]>([]);
+	const [templates, setTemplates] = useState<RoleTemplate[]>([]);
 	const [branches, setBranches] = useState<BranchItem[]>([]);
 	const [departments, setDepartments] = useState<DepartmentItem[]>([]);
 	const [designations, setDesignations] = useState<DesignationItem[]>([]);
@@ -100,14 +115,16 @@ export default function SetupPage() {
 	}, [router]);
 
 	const loadAllData = async (orgId: string) => {
-		const [rolesRes, branchRes, deptRes, desigRes] = await Promise.all([
+		const [rolesRes, templatesRes, branchRes, deptRes, desigRes] = await Promise.all([
 			apiFetch('/roles/', { orgId }),
+			apiFetch('/roles/templates/', { orgId }),
 			apiFetch(`/organizations/${orgId}/branches/`, { orgId }),
 			apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
 			apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
 		]);
 
 		if (rolesRes.ok) { const d = await rolesRes.json(); setRoles(d.data || []); }
+		if (templatesRes.ok) { const d = await templatesRes.json(); setTemplates(d.data || []); }
 		if (branchRes.ok) { const d = await branchRes.json(); setBranches(d.data || []); }
 		if (deptRes.ok) { const d = await deptRes.json(); setDepartments(d.data || []); }
 		if (desigRes.ok) { const d = await desigRes.json(); setDesignations(d.data || []); }
@@ -118,8 +135,12 @@ export default function SetupPage() {
 		const orgId = org.id;
 		switch (step) {
 			case 'roles': {
-				const r = await apiFetch('/roles/', { orgId });
+				const [r, t] = await Promise.all([
+					apiFetch('/roles/', { orgId }),
+					apiFetch('/roles/templates/', { orgId }),
+				]);
 				if (r.ok) { const d = await r.json(); setRoles(d.data || []); }
+				if (t.ok) { const d = await t.json(); setTemplates(d.data || []); }
 				break;
 			}
 			case 'branches': {
@@ -133,12 +154,22 @@ export default function SetupPage() {
 				break;
 			}
 			case 'designations': {
-				const r = await apiFetch(`/organizations/${orgId}/designations/`, { orgId });
+				const [r, dept] = await Promise.all([
+					apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
+					apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
+				]);
 				if (r.ok) { const d = await r.json(); setDesignations(d.data || []); }
+				if (dept.ok) { const d = await dept.json(); setDepartments(d.data || []); }
 				break;
 			}
 		}
 	}, [org]);
+
+	const canProceed = () => {
+		const step = STEPS[currentStep];
+		if (step.key === 'departments') return departments.length > 0;
+		return true;
+	};
 
 	const goNext = () => {
 		if (currentStep < STEPS.length - 1) {
@@ -205,6 +236,9 @@ export default function SetupPage() {
 										<Icon className="h-4 w-4" />
 									)}
 									<span className="hidden sm:inline">{s.label}</span>
+									{s.optional && (
+										<span className="hidden sm:inline text-xs opacity-60">(optional)</span>
+									)}
 								</button>
 								{i < STEPS.length - 1 && (
 									<ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -221,6 +255,7 @@ export default function SetupPage() {
 							<RolesStep
 								orgId={org.id}
 								roles={roles}
+								templates={templates}
 								onReload={() => reloadStep('roles')}
 							/>
 						)}
@@ -241,6 +276,7 @@ export default function SetupPage() {
 						{step.key === 'designations' && (
 							<DesignationsStep
 								orgId={org.id}
+								departments={departments}
 								designations={designations}
 								onReload={() => reloadStep('designations')}
 							/>
@@ -265,7 +301,7 @@ export default function SetupPage() {
 								Skip to dashboard
 							</Button>
 						)}
-						<Button onClick={goNext}>
+						<Button onClick={goNext} disabled={!canProceed()}>
 							{isLastStep ? (
 								<>
 									<Rocket className="mr-2 h-4 w-4" />
@@ -289,14 +325,28 @@ export default function SetupPage() {
 	 STEP 1 — ROLES
 	 ═══════════════════════════════════════════════════════════════════ */
 
-function RolesStep({ orgId, roles, onReload }: {
-	orgId: string; roles: RoleItem[]; onReload: () => void;
+function RolesStep({ orgId, roles, templates, onReload }: {
+	orgId: string; roles: RoleItem[]; templates: RoleTemplate[]; onReload: () => void;
 }) {
+	const [applying, setApplying] = useState<string | null>(null);
 	const [creating, setCreating] = useState(false);
 	const [newRole, setNewRole] = useState('');
 	const [saving, setSaving] = useState(false);
 
-	const handleCreate = async () => {
+	const handleApplyTemplate = async (templateName: string) => {
+		setApplying(templateName);
+		try {
+			const res = await apiFetch('/roles/templates/apply/', {
+				method: 'POST', orgId,
+				body: JSON.stringify({ template: templateName }),
+			});
+			if (res.ok) onReload();
+		} finally {
+			setApplying(null);
+		}
+	};
+
+	const handleCreateCustom = async () => {
 		if (!newRole.trim()) return;
 		setSaving(true);
 		try {
@@ -319,7 +369,7 @@ function RolesStep({ orgId, roles, onReload }: {
 		onReload();
 	};
 
-	const systemRoles = ['Owner', 'Admin', 'Manager', 'Developer', 'Viewer'];
+	const nonOwnerRoles = roles.filter(r => r.name !== 'Owner');
 
 	return (
 		<div className="space-y-6">
@@ -329,47 +379,97 @@ function RolesStep({ orgId, roles, onReload }: {
 					Roles
 				</h2>
 				<p className="text-sm text-muted-foreground mt-1">
-					Your organization comes with default roles. You can add custom roles for your team.
+					Pick from templates below or create your own. Templates are copied into your org — you can rename or edit them later.
 				</p>
 			</div>
 
-			<div className="space-y-2">
-				{roles.map(role => {
-					const isSystem = systemRoles.includes(role.name ?? '');
-					return (
-						<div key={role.id} className="flex items-center justify-between py-3 px-4 rounded-lg border">
-							<div className="flex items-center gap-3">
-								<div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${isSystem ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-									}`}>
-									{role.priority}
+			{/* Role Templates */}
+			<div>
+				<p className="text-sm font-medium mb-3">Templates</p>
+				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+					{templates.map(t => {
+						const applied = t.already_applied || nonOwnerRoles.some(r => r.name === t.name);
+						return (
+							<div
+								key={t.name}
+								className={`flex items-start justify-between p-4 rounded-lg border transition-colors ${applied
+									? 'bg-primary/5 border-primary/20'
+									: 'bg-muted/30 border-border/50 hover:border-border'
+									}`}
+							>
+								<div className="flex-1 min-w-0 mr-3">
+									<p className="font-medium text-sm">{t.name}</p>
+									<p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
 								</div>
-								<div>
-									<p className="font-medium">{role.name}</p>
-									{isSystem && (
-										<p className="text-xs text-muted-foreground">System role</p>
-									)}
-								</div>
+								{applied ? (
+									<Badge variant="secondary" className="shrink-0 text-xs gap-1">
+										<Check className="h-3 w-3" /> Added
+									</Badge>
+								) : (
+									<Button
+										size="sm"
+										variant="outline"
+										className="shrink-0"
+										disabled={applying === t.name}
+										onClick={() => handleApplyTemplate(t.name)}
+									>
+										{applying === t.name ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<>
+												<Copy className="mr-1.5 h-3.5 w-3.5" />
+												Use
+											</>
+										)}
+									</Button>
+								)}
 							</div>
-							{!isSystem && (
-								<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(role.id)}>
-									<Trash2 className="h-4 w-4 text-destructive" />
-								</Button>
-							)}
-						</div>
-					);
-				})}
+						);
+					})}
+				</div>
 			</div>
 
+			{/* Current org roles */}
+			{nonOwnerRoles.length > 0 && (
+				<div>
+					<p className="text-sm font-medium mb-3">Your Roles</p>
+					<div className="space-y-2">
+						{roles.map(role => (
+							<div key={role.id} className="flex items-center justify-between py-3 px-4 rounded-lg border">
+								<div className="flex items-center gap-3">
+									<div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${role.name === 'Owner' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+										}`}>
+										{role.priority}
+									</div>
+									<div>
+										<p className="font-medium">{role.name}</p>
+										{role.name === 'Owner' && (
+											<p className="text-xs text-muted-foreground">Auto-assigned to you</p>
+										)}
+									</div>
+								</div>
+								{role.name !== 'Owner' && (
+									<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(role.id)}>
+										<Trash2 className="h-4 w-4 text-destructive" />
+									</Button>
+								)}
+							</div>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Add custom role */}
 			{creating ? (
 				<div className="flex items-center gap-2">
 					<Input
-						placeholder="Role name"
+						placeholder="Custom role name"
 						value={newRole}
 						onChange={e => setNewRole(e.target.value)}
-						onKeyDown={e => e.key === 'Enter' && handleCreate()}
+						onKeyDown={e => e.key === 'Enter' && handleCreateCustom()}
 						autoFocus
 					/>
-					<Button onClick={handleCreate} disabled={saving || !newRole.trim()}>
+					<Button onClick={handleCreateCustom} disabled={saving || !newRole.trim()}>
 						{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
 					</Button>
 					<Button variant="ghost" onClick={() => { setCreating(false); setNewRole(''); }}>
@@ -379,7 +479,7 @@ function RolesStep({ orgId, roles, onReload }: {
 			) : (
 				<Button variant="outline" onClick={() => setCreating(true)}>
 					<Plus className="mr-2 h-4 w-4" />
-					Add Custom Role
+					Create Custom Role
 				</Button>
 			)}
 		</div>
@@ -433,9 +533,10 @@ function BranchesStep({ orgId, branches, onReload }: {
 				<h2 className="text-xl font-semibold flex items-center gap-2">
 					<Building2 className="h-5 w-5 text-primary" />
 					Branches
+					<Badge variant="secondary" className="text-xs">Optional</Badge>
 				</h2>
 				<p className="text-sm text-muted-foreground mt-1">
-					Add at least one branch. The branch code is used in auto-generated employee IDs (e.g. 001-BLR).
+					Add office locations if your company has multiple branches. The branch code is used in auto-generated employee IDs (e.g. 001-BLR). You can skip this and add branches later.
 				</p>
 			</div>
 
@@ -522,14 +623,8 @@ function BranchesStep({ orgId, branches, onReload }: {
 			) : (
 				<Button variant="outline" onClick={() => setCreating(true)}>
 					<Plus className="mr-2 h-4 w-4" />
-					Add Another Branch
+					Add Branch
 				</Button>
-			)}
-
-			{branches.length === 0 && !creating && (
-				<p className="text-sm text-amber-600 dark:text-amber-400">
-					⚠ You need at least one branch to create employee profiles.
-				</p>
 			)}
 		</div>
 	);
@@ -577,9 +672,10 @@ function DepartmentsStep({ orgId, departments, onReload }: {
 				<h2 className="text-xl font-semibold flex items-center gap-2">
 					<Layers className="h-5 w-5 text-primary" />
 					Departments
+					<Badge variant="destructive" className="text-xs">Required</Badge>
 				</h2>
 				<p className="text-sm text-muted-foreground mt-1">
-					Create departments to organize your employees (e.g. Engineering, Marketing, HR).
+					Create at least one department. Job roles will be organized under departments in the next step.
 				</p>
 			</div>
 
@@ -633,31 +729,44 @@ function DepartmentsStep({ orgId, departments, onReload }: {
 					Add Department
 				</Button>
 			)}
+
+			{departments.length === 0 && !creating && (
+				<p className="text-sm text-amber-600 dark:text-amber-400">
+					You need at least one department to proceed.
+				</p>
+			)}
 		</div>
 	);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-	 STEP 4 — DESIGNATIONS
+	 STEP 4 — JOB ROLES / DESIGNATIONS (per department)
 	 ═══════════════════════════════════════════════════════════════════ */
 
-function DesignationsStep({ orgId, designations, onReload }: {
-	orgId: string; designations: DesignationItem[]; onReload: () => void;
+function DesignationsStep({ orgId, departments, designations, onReload }: {
+	orgId: string;
+	departments: DepartmentItem[];
+	designations: DesignationItem[];
+	onReload: () => void;
 }) {
 	const [creating, setCreating] = useState(designations.length === 0);
 	const [saving, setSaving] = useState(false);
-	const [form, setForm] = useState({ title: '', level: '1' });
+	const [form, setForm] = useState({ title: '', level: '1', department: '' });
 
 	const handleCreate = async () => {
-		if (!form.title) return;
+		if (!form.title || !form.department) return;
 		setSaving(true);
 		try {
 			const res = await apiFetch(`/organizations/${orgId}/designations/`, {
 				method: 'POST', orgId,
-				body: JSON.stringify({ title: form.title, level: parseInt(form.level) || 1 }),
+				body: JSON.stringify({
+					title: form.title,
+					level: parseInt(form.level) || 1,
+					department: form.department,
+				}),
 			});
 			if (res.ok) {
-				setForm({ title: '', level: '1' });
+				setForm({ title: '', level: '1', department: form.department });
 				setCreating(false);
 				onReload();
 			}
@@ -671,47 +780,106 @@ function DesignationsStep({ orgId, designations, onReload }: {
 		onReload();
 	};
 
+	// Group designations by department
+	const grouped = departments.map(dept => ({
+		department: dept,
+		roles: designations.filter(d => d.department === dept.id),
+	}));
+	const unassigned = designations.filter(d => !d.department);
+
 	return (
 		<div className="space-y-6">
 			<div>
 				<h2 className="text-xl font-semibold flex items-center gap-2">
 					<Briefcase className="h-5 w-5 text-primary" />
-					Designations
+					Job Roles
 				</h2>
 				<p className="text-sm text-muted-foreground mt-1">
-					Define job titles/designations for employees (e.g. Software Engineer, HR Manager, CEO).
+					Define job roles within each department (e.g. Software Engineer under Engineering, HR Manager under Human Resources).
 				</p>
 			</div>
 
-			{designations.length > 0 && (
-				<div className="space-y-2">
-					{designations.map(d => (
-						<div key={d.id} className="flex items-center justify-between py-3 px-4 rounded-lg border">
-							<div className="flex items-center gap-3">
-								<div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-									L{d.level}
+			{/* Grouped display */}
+			{grouped.map(g => (
+				<div key={g.department.id} className="space-y-2">
+					<p className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+						<Layers className="h-3.5 w-3.5" />
+						{g.department.name}
+						{g.department.code && (
+							<Badge variant="secondary" className="font-mono text-xs">{g.department.code}</Badge>
+						)}
+					</p>
+					{g.roles.length > 0 ? (
+						<div className="ml-5 space-y-1">
+							{g.roles.map(d => (
+								<div key={d.id} className="flex items-center justify-between py-2 px-3 rounded-lg border">
+									<div className="flex items-center gap-3">
+										<div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+											L{d.level}
+										</div>
+										<p className="text-sm font-medium">{d.title}</p>
+									</div>
+									<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(d.id)}>
+										<Trash2 className="h-3 w-3 text-destructive" />
+									</Button>
 								</div>
-								<p className="font-medium">{d.title}</p>
-							</div>
-							<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(d.id)}>
-								<Trash2 className="h-4 w-4 text-destructive" />
-							</Button>
+							))}
 						</div>
-					))}
+					) : (
+						<p className="ml-5 text-xs text-muted-foreground italic">No job roles yet</p>
+					)}
+				</div>
+			))}
+
+			{/* Unassigned designations (legacy) */}
+			{unassigned.length > 0 && (
+				<div className="space-y-2">
+					<p className="text-sm font-semibold text-muted-foreground">Unassigned</p>
+					<div className="ml-5 space-y-1">
+						{unassigned.map(d => (
+							<div key={d.id} className="flex items-center justify-between py-2 px-3 rounded-lg border">
+								<div className="flex items-center gap-3">
+									<div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+										L{d.level}
+									</div>
+									<p className="text-sm font-medium">{d.title}</p>
+								</div>
+								<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(d.id)}>
+									<Trash2 className="h-3 w-3 text-destructive" />
+								</Button>
+							</div>
+						))}
+					</div>
 				</div>
 			)}
 
+			{/* Create form */}
 			{creating ? (
-				<div className="flex items-end gap-3 p-4 rounded-lg border bg-muted/30">
-					<div className="flex-1">
-						<Label>Title *</Label>
-						<Input
-							value={form.title}
-							onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-							placeholder="e.g. Software Engineer"
-							onKeyDown={e => e.key === 'Enter' && handleCreate()}
-							autoFocus
-						/>
+				<div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+					<div className="grid grid-cols-2 gap-3">
+						<div>
+							<Label>Department *</Label>
+							<Select value={form.department} onValueChange={v => setForm(f => ({ ...f, department: v }))}>
+								<SelectTrigger>
+									<SelectValue placeholder="Select department" />
+								</SelectTrigger>
+								<SelectContent>
+									{departments.map(d => (
+										<SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label>Job Role Title *</Label>
+							<Input
+								value={form.title}
+								onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+								placeholder="e.g. Software Engineer"
+								onKeyDown={e => e.key === 'Enter' && handleCreate()}
+								autoFocus
+							/>
+						</div>
 					</div>
 					<div className="w-24">
 						<Label>Level</Label>
@@ -722,19 +890,21 @@ function DesignationsStep({ orgId, designations, onReload }: {
 							onChange={e => setForm(f => ({ ...f, level: e.target.value }))}
 						/>
 					</div>
-					<Button onClick={handleCreate} disabled={saving || !form.title}>
-						{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
-					</Button>
-					{designations.length > 0 && (
-						<Button variant="ghost" onClick={() => { setCreating(false); setForm({ title: '', level: '1' }); }}>
-							Cancel
+					<div className="flex gap-2">
+						<Button onClick={handleCreate} disabled={saving || !form.title || !form.department}>
+							{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
 						</Button>
-					)}
+						{designations.length > 0 && (
+							<Button variant="ghost" onClick={() => { setCreating(false); setForm({ title: '', level: '1', department: '' }); }}>
+								Cancel
+							</Button>
+						)}
+					</div>
 				</div>
 			) : (
 				<Button variant="outline" onClick={() => setCreating(true)}>
 					<Plus className="mr-2 h-4 w-4" />
-					Add Designation
+					Add Job Role
 				</Button>
 			)}
 
