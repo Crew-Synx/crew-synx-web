@@ -188,6 +188,10 @@ export default function OnboardEmployeePage() {
 		setError('');
 		try {
 			const payload: Record<string, unknown> = { ...form };
+			// Combine first_name + last_name into name for the backend
+			payload.name = `${form.first_name} ${form.last_name}`.trim();
+			delete payload.first_name;
+			delete payload.last_name;
 			// Remove empty strings
 			Object.keys(payload).forEach(k => { if (payload[k] === '') delete payload[k]; });
 			// Convert numeric fields
