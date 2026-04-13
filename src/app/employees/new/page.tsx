@@ -214,7 +214,7 @@ export default function OnboardEmployeePage() {
 		{ title: 'Assignment', desc: 'Role, branch, department' },
 		{ title: 'Personal', desc: 'Contact and address' },
 		{ title: 'Employment', desc: 'Employment type and dates' },
-		{ title: 'Compensation', desc: 'Salary and bank details' },
+		{ title: 'Compensation', desc: 'Salary and bank details (optional)' },
 	];
 
 	if (loading) {
@@ -504,7 +504,13 @@ export default function OnboardEmployeePage() {
 							</div>
 							<div className="flex justify-between">
 								<Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-								<Button onClick={() => setStep(4)}>Next</Button>
+								<div className="flex gap-2">
+									<Button variant="outline" onClick={handleSubmit} disabled={submitting}>
+										{submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+										Skip & Onboard
+									</Button>
+									<Button onClick={() => setStep(4)}>Next</Button>
+								</div>
 							</div>
 						</CardContent>
 					</Card>
