@@ -409,9 +409,9 @@ export default function DashboardPage() {
 		);
 	}
 
-	const getRoleIcon = (roleName: string) => {
-		if (roleName.toLowerCase() === 'owner') return <Crown className="h-3.5 w-3.5" />;
-		if (roleName.toLowerCase() === 'admin') return <Shield className="h-3.5 w-3.5" />;
+	const getRoleIcon = (roleName?: string) => {
+		if (roleName?.toLowerCase() === 'owner') return <Crown className="h-3.5 w-3.5" />;
+		if (roleName?.toLowerCase() === 'admin') return <Shield className="h-3.5 w-3.5" />;
 		return null;
 	};
 
@@ -708,7 +708,7 @@ export default function DashboardPage() {
 																		<SelectValue placeholder="Select a role" />
 																	</SelectTrigger>
 																	<SelectContent>
-																		{roles.filter((r) => r.name.toLowerCase() !== 'owner').map((role) => (
+																		{roles.filter((r) => r.name?.toLowerCase() !== 'owner').map((role) => (
 																			<SelectItem key={role.id} value={role.id}>
 																				{role.name}
 																			</SelectItem>
@@ -775,8 +775,8 @@ export default function DashboardPage() {
 														</div>
 														<div className="flex items-center gap-2 shrink-0">
 															<Badge variant="secondary" className="text-xs gap-1">
-																{getRoleIcon(member.role.name)}
-																{member.role.name}
+																{getRoleIcon(member.role?.name)}
+																{member.role?.name || 'No role'}
 															</Badge>
 															{member.user?.id !== user?.id && (
 																<DropdownMenu>
@@ -787,7 +787,7 @@ export default function DashboardPage() {
 																	</DropdownMenuTrigger>
 																	<DropdownMenuContent align="end">
 																		{roles
-																			.filter((r) => r.id !== member.role.id && r.name.toLowerCase() !== 'owner')
+																			.filter((r) => r.id !== member.role?.id && r.name?.toLowerCase() !== 'owner')
 																			.map((role) => (
 																				<DropdownMenuItem
 																					key={role.id}

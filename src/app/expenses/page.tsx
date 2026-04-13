@@ -308,7 +308,7 @@ export default function ExpensesPage() {
 													</div>
 												</TableCell>
 												<TableCell className="text-sm">{claim.employee_name}</TableCell>
-												<TableCell className="text-sm capitalize">{claim.expense_type.replace(/_/g, ' ')}</TableCell>
+												<TableCell className="text-sm capitalize">{claim.expense_type?.replace(/_/g, ' ') || '-'}</TableCell>
 												<TableCell className="font-mono">
 													{claim.currency} {parseFloat(claim.amount).toLocaleString()}
 												</TableCell>

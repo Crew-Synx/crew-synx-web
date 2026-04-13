@@ -193,10 +193,10 @@ export default function SetupPage() {
 								<button
 									onClick={() => setCurrentStep(i)}
 									className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active
-											? 'bg-primary text-primary-foreground'
-											: done
-												? 'bg-primary/10 text-primary'
-												: 'bg-muted text-muted-foreground'
+										? 'bg-primary text-primary-foreground'
+										: done
+											? 'bg-primary/10 text-primary'
+											: 'bg-muted text-muted-foreground'
 										}`}
 								>
 									{done ? (
@@ -335,7 +335,7 @@ function RolesStep({ orgId, roles, onReload }: {
 
 			<div className="space-y-2">
 				{roles.map(role => {
-					const isSystem = systemRoles.includes(role.name);
+					const isSystem = systemRoles.includes(role.name ?? '');
 					return (
 						<div key={role.id} className="flex items-center justify-between py-3 px-4 rounded-lg border">
 							<div className="flex items-center gap-3">
