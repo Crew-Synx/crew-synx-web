@@ -11,7 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, ArrowLeft, Check } from 'lucide-react';
+import {
+	Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import { Loader2, ArrowLeft, Check, Plus } from 'lucide-react';
 import type { Organization, Branch, Department, Designation, Role } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
 
@@ -56,6 +59,82 @@ export default function OnboardEmployeePage() {
 	const [designations, setDesignations] = useState<Designation[]>([]);
 	const [roles, setRoles] = useState<Role[]>([]);
 
+	// Modal state for creating new entities inline
+	const [modal, setModal] = useState<'role' | 'branch' | 'department' | 'designation' | null>(null);
+	const [modalSubmitting, setModalSubmitting] = useState(false);
+	const [modalError, setModalError] = useState('');
+	const [modalForm, setModalForm] = useState<Record<string, string>>({});
+
+	const openModal = (type: typeof modal) => {
+		setModal(type);
+		setModalForm({});
+		setModalError('');
+	};
+
+	async function handleModalCreate() {
+		if (!org || !modal) return;
+		setModalSubmitting(true);
+		setModalError('');
+		try {
+			let url = '';
+			let body: Record<string, unknown> = {};
+
+			switch (modal) {
+				case 'role':
+					url = `/roles/`;
+					body = { name: modalForm.name };
+					break;
+				case 'branch':
+					url = `/organizations/${org.id}/branches/`;
+					body = { name: modalForm.name, code: modalForm.code?.toUpperCase() };
+					break;
+				case 'department':
+					url = `/organizations/${org.id}/departments/`;
+					body = { name: modalForm.name };
+					break;
+				case 'designation':
+					url = `/organizations/${org.id}/designations/`;
+					body = { title: modalForm.title };
+					break;
+			}
+
+			const res = await apiFetch(url, {
+				method: 'POST',
+				orgId: org.id,
+				body: JSON.stringify(body),
+			});
+			const json = await res.json();
+
+			if (res.ok) {
+				const created = json.data || json;
+				// Add to local list and auto-select
+				switch (modal) {
+					case 'role':
+						setRoles(prev => [...prev, created]);
+						set('role', created.id);
+						break;
+					case 'branch':
+						setBranches(prev => [...prev, created]);
+						set('branch', created.id);
+						break;
+					case 'department':
+						setDepartments(prev => [...prev, created]);
+						set('department', created.id);
+						break;
+					case 'designation':
+						setDesignations(prev => [...prev, created]);
+						set('designation', created.id);
+						break;
+				}
+				setModal(null);
+			} else {
+				setModalError(json.error || json.message || json.detail || JSON.stringify(json.errors || json));
+			}
+		} finally {
+			setModalSubmitting(false);
+		}
+	}
+
 	const [form, setForm] = useState({
 		// Basic
 		email: '', first_name: '', last_name: '',
@@ -92,7 +171,7 @@ export default function OnboardEmployeePage() {
 				apiFetch(`/organizations/${orgId}/branches/`, { orgId }),
 				apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
 				apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
-				apiFetch(`/organizations/${orgId}/roles/`, { orgId }),
+				apiFetch(`/roles/`, { orgId }),
 			]);
 			if (brRes.ok) setBranches((await brRes.json()).data || []);
 			if (deptRes.ok) setDepartments((await deptRes.json()).data || []);
@@ -234,7 +313,12 @@ export default function OnboardEmployeePage() {
 						</CardHeader>
 						<CardContent className="space-y-4">
 							<div>
-								<Label>Role *</Label>
+								<div className="flex items-center justify-between mb-1">
+									<Label>Role *</Label>
+									<Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => openModal('role')}>
+										<Plus className="h-3 w-3" /> New
+									</Button>
+								</div>
 								<Select value={form.role} onValueChange={v => set('role', v)}>
 									<SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger>
 									<SelectContent>
@@ -245,7 +329,12 @@ export default function OnboardEmployeePage() {
 								</Select>
 							</div>
 							<div>
-								<Label>Branch *</Label>
+								<div className="flex items-center justify-between mb-1">
+									<Label>Branch *</Label>
+									<Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => openModal('branch')}>
+										<Plus className="h-3 w-3" /> New
+									</Button>
+								</div>
 								<Select value={form.branch} onValueChange={v => set('branch', v)}>
 									<SelectTrigger><SelectValue placeholder="Select branch" /></SelectTrigger>
 									<SelectContent>
@@ -260,7 +349,12 @@ export default function OnboardEmployeePage() {
 							</div>
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<Label>Department</Label>
+									<div className="flex items-center justify-between mb-1">
+										<Label>Department</Label>
+										<Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => openModal('department')}>
+											<Plus className="h-3 w-3" /> New
+										</Button>
+									</div>
 									<Select value={form.department} onValueChange={v => set('department', v)}>
 										<SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
 										<SelectContent>
@@ -271,7 +365,12 @@ export default function OnboardEmployeePage() {
 									</Select>
 								</div>
 								<div>
-									<Label>Designation</Label>
+									<div className="flex items-center justify-between mb-1">
+										<Label>Designation</Label>
+										<Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => openModal('designation')}>
+											<Plus className="h-3 w-3" /> New
+										</Button>
+									</div>
 									<Select value={form.designation} onValueChange={v => set('designation', v)}>
 										<SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
 										<SelectContent>
@@ -489,6 +588,96 @@ export default function OnboardEmployeePage() {
 						</CardContent>
 					</Card>
 				)}
+
+				{/* Create New Entity Modal */}
+				<Dialog open={modal !== null} onOpenChange={open => { if (!open) setModal(null); }}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>
+								{modal === 'role' && 'Create New Role'}
+								{modal === 'branch' && 'Create New Branch'}
+								{modal === 'department' && 'Create New Department'}
+								{modal === 'designation' && 'Create New Designation'}
+							</DialogTitle>
+							<DialogDescription>
+								{modal === 'role' && 'Add a new role to your organization.'}
+								{modal === 'branch' && 'Add a new branch. The code is used for generating employee IDs.'}
+								{modal === 'department' && 'Add a new department to your organization.'}
+								{modal === 'designation' && 'Add a new designation to your organization.'}
+							</DialogDescription>
+						</DialogHeader>
+
+						{modalError && (
+							<div className="rounded-md border border-destructive bg-destructive/10 p-3 text-sm text-destructive">
+								{modalError}
+							</div>
+						)}
+
+						<div className="space-y-4">
+							{(modal === 'role' || modal === 'department') && (
+								<div>
+									<Label>Name *</Label>
+									<Input
+										value={modalForm.name || ''}
+										onChange={e => setModalForm(f => ({ ...f, name: e.target.value }))}
+										placeholder={modal === 'role' ? 'e.g. Team Lead' : 'e.g. Engineering'}
+									/>
+								</div>
+							)}
+
+							{modal === 'branch' && (
+								<>
+									<div>
+										<Label>Name *</Label>
+										<Input
+											value={modalForm.name || ''}
+											onChange={e => setModalForm(f => ({ ...f, name: e.target.value }))}
+											placeholder="e.g. Hyderabad Office"
+										/>
+									</div>
+									<div>
+										<Label>Code *</Label>
+										<Input
+											value={modalForm.code || ''}
+											onChange={e => setModalForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+											placeholder="e.g. HYD"
+											maxLength={10}
+										/>
+										<p className="text-xs text-muted-foreground mt-1">Short code used in employee IDs.</p>
+									</div>
+								</>
+							)}
+
+							{modal === 'designation' && (
+								<div>
+									<Label>Title *</Label>
+									<Input
+										value={modalForm.title || ''}
+										onChange={e => setModalForm(f => ({ ...f, title: e.target.value }))}
+										placeholder="e.g. Senior Engineer"
+									/>
+								</div>
+							)}
+						</div>
+
+						<DialogFooter>
+							<Button variant="outline" onClick={() => setModal(null)}>Cancel</Button>
+							<Button
+								onClick={handleModalCreate}
+								disabled={
+									modalSubmitting ||
+									(modal === 'role' && !modalForm.name?.trim()) ||
+									(modal === 'branch' && (!modalForm.name?.trim() || !modalForm.code?.trim())) ||
+									(modal === 'department' && !modalForm.name?.trim()) ||
+									(modal === 'designation' && !modalForm.title?.trim())
+								}
+							>
+								{modalSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+								Create
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</div>
 		</div>
 	);
