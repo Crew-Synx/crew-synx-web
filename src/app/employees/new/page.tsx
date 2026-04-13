@@ -202,7 +202,15 @@ export default function OnboardEmployeePage() {
 				router.push('/employees');
 			} else {
 				const errData = await res.json();
-				setError(errData.error || errData.detail || JSON.stringify(errData.errors || errData));
+				if (errData.details) {
+					// Validation errors: show field-level messages
+					const msgs = Object.entries(errData.details)
+						.map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`)
+						.join('; ');
+					setError(errData.message ? `${errData.message} ${msgs}` : msgs);
+				} else {
+					setError(errData.message || errData.detail || errData.error || JSON.stringify(errData));
+				}
 			}
 		} finally {
 			setSubmitting(false);
