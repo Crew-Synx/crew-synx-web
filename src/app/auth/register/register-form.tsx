@@ -49,7 +49,7 @@ export default function RegisterForm() {
       }
 
       const query = new URLSearchParams();
-      query.set('email', formData.email);
+      query.set('user_id', formData.email);
       query.set('registration_type', 'organization');
       router.push(`/auth/verify?${query.toString()}`);
     } catch (error) {

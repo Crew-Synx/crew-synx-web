@@ -59,7 +59,7 @@ export default function LoginForm() {
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="userId" className="font-semibold text-gray-700">Employee ID</Label>
+            <Label htmlFor="userId" className="font-semibold text-gray-700">Employee ID or Email</Label>
             <Input
               id="userId"
               name="userId"
@@ -68,7 +68,7 @@ export default function LoginForm() {
               required
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              placeholder="e.g. 001-BLR"
+              placeholder="e.g. 001-BLR or you@email.com"
               className="w-full p-3 h-12 bg-muted/50"
               disabled={isLoading}
             />
@@ -85,7 +85,7 @@ export default function LoginForm() {
                 Sending OTP...
               </>
             ) : (
-              'Continue with Employee ID'
+              'Continue'
             )}
           </Button>
 
