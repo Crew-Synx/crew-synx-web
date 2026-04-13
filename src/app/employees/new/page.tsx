@@ -192,6 +192,9 @@ export default function OnboardEmployeePage() {
 			payload.name = `${form.first_name} ${form.last_name}`.trim();
 			delete payload.first_name;
 			delete payload.last_name;
+			// Convert role ID to role name (backend looks up by name)
+			const selectedRole = roles.find(r => r.id === form.role);
+			if (selectedRole) payload.role = selectedRole.name;
 			// Remove empty strings
 			Object.keys(payload).forEach(k => { if (payload[k] === '') delete payload[k]; });
 			// Convert numeric fields
