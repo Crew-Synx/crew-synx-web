@@ -6,45 +6,30 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react';
 
-const API = 'https://crewsynx.switchspace.in/api/v1';
-
-function getToken() {
-	return localStorage.getItem('access_token');
-}
-
 export default function AcceptInvitePage() {
 	const { token } = useParams<{ token: string }>();
 	const router = useRouter();
-	const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'unauthenticated'>('loading');
+	const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error' | 'unauthenticated'>('accepting');
 	const [message, setMessage] = useState('');
-
-	useEffect(() => {
-		const accessToken = getToken();
-		if (!accessToken) {
-			setStatus('unauthenticated');
-			return;
-		}
-		setStatus('accepting');
-	}, []);
 
 	const acceptInvite = async () => {
 		setStatus('accepting');
 		try {
-			const res = await fetch(`${API}/organizations/accept-invite/`, {
+			const res = await fetch('/api/proxy/organizations/accept-invite/', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${getToken()}`,
-				},
+				credentials: 'include',
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ token }),
 			});
 
-			const data = await res.json();
+			const data = await res.json().catch(() => ({}));
 
 			if (res.ok) {
 				setStatus('success');
 				setMessage('You have joined the organization!');
 				setTimeout(() => router.push('/dashboard'), 2000);
+			} else if (res.status === 401) {
+				router.push(`/auth/login?redirect_uri=/invite/${token}`);
 			} else {
 				setStatus('error');
 				setMessage(data.message || 'Failed to accept invite.');

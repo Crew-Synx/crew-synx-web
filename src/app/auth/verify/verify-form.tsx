@@ -8,12 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { PUBLIC_API_URL } from '@/lib/api';
 
 export default function VerifyForm() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(30);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
@@ -30,14 +32,14 @@ export default function VerifyForm() {
     if (!userId || isResending || resendCountdown > 0) return;
     setIsResending(true);
     try {
-      await fetch('https://crewsynx.switchspace.in/api/v1/auth/request-otp/', {
+      await fetch(`${PUBLIC_API_URL}/auth/request-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId }),
       });
       setResendCountdown(30);
-    } catch (error) {
-      console.error('Failed to resend OTP:', error);
+    } catch {
+      // Resend failure is non-fatal
     } finally {
       setIsResending(false);
     }
@@ -46,44 +48,38 @@ export default function VerifyForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/verify-otp/', {
+      // Call the Next.js route handler — tokens are set as httpOnly cookies server-side
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, otp }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
-        throw new Error('Invalid or expired OTP');
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.error ?? 'Invalid or expired OTP');
       }
 
-      const data = await response.json();
-      const token = data.data.access_token;
-
       if (redirectUri) {
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('refresh_token', data.data.refresh_token);
-        // Support both absolute URLs and relative paths
         try {
           const link = new URL(redirectUri, window.location.origin);
           router.push(link.pathname + link.search);
         } catch {
           router.push(redirectUri);
         }
+      } else if (registrationType === 'organization') {
+        router.push('/setup');
       } else {
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('refresh_token', data.data.refresh_token);
-        if (registrationType === 'organization') {
-          router.push('/setup');
-        } else {
-          router.push('/dashboard');
-        }
+        router.push('/dashboard');
       }
-    } catch (error) {
-      console.error(error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Verification failed';
+      setError(message);
       setIsLoading(false);
-      // In a real app, show a toast error here
     }
   };
 
@@ -91,6 +87,9 @@ export default function VerifyForm() {
     <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="otp" className="font-semibold">6-Digit Code</Label>

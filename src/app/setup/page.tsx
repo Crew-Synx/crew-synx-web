@@ -81,6 +81,7 @@ export default function SetupPage() {
 	const router = useRouter();
 	const [org, setOrg] = useState<Organization | null>(null);
 	const [loading, setLoading] = useState(true);
+	const [initError, setInitError] = useState<string | null>(null);
 	const [currentStep, setCurrentStep] = useState(0);
 
 	// Data for each step
@@ -92,20 +93,18 @@ export default function SetupPage() {
 
 	useEffect(() => {
 		const init = async () => {
-			const token = localStorage.getItem('access_token');
-			if (!token) { router.push('/auth/login'); return; }
-
 			try {
 				const res = await apiFetch('/organizations/');
 				if (!res.ok) { router.push('/auth/login'); return; }
-				const data = await res.json();
+				const data = await res.json().catch(() => ({}));
 				const orgList = data.data || [];
 				if (orgList.length === 0) { router.push('/onboarding'); return; }
 				const o = orgList[0];
 				setOrg(o);
 				localStorage.setItem('selected_org', JSON.stringify(o));
 				await loadAllData(o.id);
-			} catch {
+			} catch (err: unknown) {
+				setInitError(err instanceof Error ? err.message : 'Failed to load setup data');
 				router.push('/auth/login');
 			} finally {
 				setLoading(false);
@@ -123,11 +122,11 @@ export default function SetupPage() {
 			apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
 		]);
 
-		if (rolesRes.ok) { const d = await rolesRes.json(); setRoles(d.data || []); }
-		if (templatesRes.ok) { const d = await templatesRes.json(); setTemplates(d.data || []); }
-		if (branchRes.ok) { const d = await branchRes.json(); setBranches(d.data || []); }
-		if (deptRes.ok) { const d = await deptRes.json(); setDepartments(d.data || []); }
-		if (desigRes.ok) { const d = await desigRes.json(); setDesignations(d.data || []); }
+		if (rolesRes.ok) { const d = await rolesRes.json().catch(() => ({})); setRoles(d.data || []); }
+		if (templatesRes.ok) { const d = await templatesRes.json().catch(() => ({})); setTemplates(d.data || []); }
+		if (branchRes.ok) { const d = await branchRes.json().catch(() => ({})); setBranches(d.data || []); }
+		if (deptRes.ok) { const d = await deptRes.json().catch(() => ({})); setDepartments(d.data || []); }
+		if (desigRes.ok) { const d = await desigRes.json().catch(() => ({})); setDesignations(d.data || []); }
 	};
 
 	const reloadStep = useCallback(async (step: StepKey) => {
@@ -139,18 +138,18 @@ export default function SetupPage() {
 					apiFetch('/roles/', { orgId }),
 					apiFetch('/roles/templates/', { orgId }),
 				]);
-				if (r.ok) { const d = await r.json(); setRoles(d.data || []); }
-				if (t.ok) { const d = await t.json(); setTemplates(d.data || []); }
+				if (r.ok) { const d = await r.json().catch(() => ({})); setRoles(d.data || []); }
+				if (t.ok) { const d = await t.json().catch(() => ({})); setTemplates(d.data || []); }
 				break;
 			}
 			case 'branches': {
 				const r = await apiFetch(`/organizations/${orgId}/branches/`, { orgId });
-				if (r.ok) { const d = await r.json(); setBranches(d.data || []); }
+				if (r.ok) { const d = await r.json().catch(() => ({})); setBranches(d.data || []); }
 				break;
 			}
 			case 'departments': {
 				const r = await apiFetch(`/organizations/${orgId}/departments/`, { orgId });
-				if (r.ok) { const d = await r.json(); setDepartments(d.data || []); }
+				if (r.ok) { const d = await r.json().catch(() => ({})); setDepartments(d.data || []); }
 				break;
 			}
 			case 'designations': {
@@ -158,8 +157,8 @@ export default function SetupPage() {
 					apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
 					apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
 				]);
-				if (r.ok) { const d = await r.json(); setDesignations(d.data || []); }
-				if (dept.ok) { const d = await dept.json(); setDepartments(d.data || []); }
+				if (r.ok) { const d = await r.json().catch(() => ({})); setDesignations(d.data || []); }
+				if (dept.ok) { const d = await dept.json().catch(() => ({})); setDepartments(d.data || []); }
 				break;
 			}
 		}
@@ -197,7 +196,17 @@ export default function SetupPage() {
 		);
 	}
 
-	if (!org) return null;
+	if (!org) {
+		if (initError) {
+			return (
+				<div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+					<p className="text-destructive font-semibold">{initError}</p>
+					<Button onClick={() => router.push('/auth/login')}>Back to Login</Button>
+				</div>
+			);
+		}
+		return null;
+	}
 
 	const step = STEPS[currentStep];
 	const isLastStep = currentStep === STEPS.length - 1;

@@ -53,8 +53,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const API = 'https://crewsynx.switchspace.in/api/v1';
+import { apiFetch } from '@/lib/api';
+import {
+	parseListResponse,
+	OrganizationSchema, MemberSchema, RoleSchema, BranchSchema, NotificationSchema,
+} from '@/lib/schemas';
 
 interface UserData {
 	id: string;
@@ -102,19 +105,6 @@ interface NotificationItem {
 	organization_id?: string;
 }
 
-function getToken() {
-	return localStorage.getItem('access_token');
-}
-
-function authHeaders(orgId?: string) {
-	const headers: Record<string, string> = {
-		'Content-Type': 'application/json',
-		Authorization: `Bearer ${getToken()}`,
-	};
-	if (orgId) headers['X-Organization-ID'] = orgId;
-	return headers;
-}
-
 export default function DashboardPage() {
 	const [user, setUser] = useState<UserData | null>(null);
 	const [orgs, setOrgs] = useState<Organization[]>([]);
@@ -143,26 +133,31 @@ export default function DashboardPage() {
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [notifOpen, setNotifOpen] = useState(false);
 
+	// Error states
+	const [actionError, setActionError] = useState<string | null>(null);
+	const [inviteError, setInviteError] = useState<string | null>(null);
+	const [roleUpdating, setRoleUpdating] = useState<string | null>(null); // memberId being updated
+
 	const router = useRouter();
 
 	const fetchMembers = useCallback(async (orgId: string) => {
 		setMembersLoading(true);
 		try {
 			const [membersRes, rolesRes] = await Promise.all([
-				fetch(`${API}/organizations/${orgId}/members/`, { headers: authHeaders(orgId) }),
-				fetch(`${API}/roles/`, { headers: authHeaders(orgId) }),
+				apiFetch(`/organizations/${orgId}/members/`, { orgId }),
+				apiFetch(`/roles/`, { orgId }),
 			]);
 
 			if (membersRes.ok) {
-				const data = await membersRes.json();
-				setMembers(data.data || []);
+				const data = await membersRes.json().catch(() => ({ data: [] }));
+				setMembers(parseListResponse(MemberSchema, data));
 			}
 			if (rolesRes.ok) {
-				const data = await rolesRes.json();
-				setRoles(data.data || []);
+				const data = await rolesRes.json().catch(() => ({ data: [] }));
+				setRoles(parseListResponse(RoleSchema, data));
 			}
 		} catch {
-			// Silently fail
+			setActionError('Failed to load team members');
 		} finally {
 			setMembersLoading(false);
 		}
@@ -170,33 +165,20 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		const init = async () => {
-			const token = getToken();
-			if (!token) {
-				router.push('/auth/login');
-				return;
-			}
-
 			try {
 				const [userRes, orgsRes] = await Promise.all([
-					fetch(`${API}/auth/me/`, { headers: authHeaders() }),
-					fetch(`${API}/organizations/`, { headers: authHeaders() }),
+					apiFetch('/auth/me/'),
+					apiFetch('/organizations/'),
 				]);
 
-				if (userRes.status === 401) {
-					localStorage.removeItem('access_token');
-					localStorage.removeItem('refresh_token');
-					router.push('/auth/login');
-					return;
-				}
-
 				if (userRes.ok) {
-					const data = await userRes.json();
+					const data = await userRes.json().catch(() => ({ data: null }));
 					setUser(data.data);
 				}
 
 				if (orgsRes.ok) {
-					const data = await orgsRes.json();
-					const orgList = data.data || [];
+					const data = await orgsRes.json().catch(() => ({ data: [] }));
+					const orgList = parseListResponse(OrganizationSchema, data);
 					setOrgs(orgList);
 					if (orgList.length > 0) {
 						const org = orgList[0];
@@ -205,12 +187,10 @@ export default function DashboardPage() {
 
 						// Redirect to setup wizard if org has no branches yet (first-time setup)
 						if (!localStorage.getItem('setup_complete')) {
-							const branchRes = await fetch(`${API}/organizations/${org.id}/branches/`, {
-								headers: authHeaders(org.id),
-							});
+							const branchRes = await apiFetch(`/organizations/${org.id}/branches/`, { orgId: org.id });
 							if (branchRes.ok) {
-								const branchData = await branchRes.json();
-								const branchList = branchData.data || [];
+								const branchData = await branchRes.json().catch(() => ({ data: [] }));
+								const branchList = parseListResponse(BranchSchema, branchData);
 								if (branchList.length === 0) {
 									router.push('/setup');
 									return;
@@ -234,19 +214,19 @@ export default function DashboardPage() {
 	const fetchNotifications = useCallback(async () => {
 		try {
 			const [countRes, listRes] = await Promise.all([
-				fetch(`${API}/notifications/global-unread-count/`, { headers: authHeaders() }),
-				fetch(`${API}/notifications/all/`, { headers: authHeaders() }),
+				apiFetch(`/notifications/global-unread-count/`, { silent429: true }),
+				apiFetch(`/notifications/all/`, { silent429: true }),
 			]);
 			if (countRes.ok) {
-				const data = await countRes.json();
+				const data = await countRes.json().catch(() => ({ data: { unread_count: 0 } }));
 				setUnreadCount(data.data?.unread_count ?? 0);
 			}
 			if (listRes.ok) {
-				const data = await listRes.json();
-				setNotifications(data.data || []);
+				const data = await listRes.json().catch(() => ({ data: [] }));
+				setNotifications(parseListResponse(NotificationSchema, data));
 			}
 		} catch {
-			// Silently fail
+			// Non-critical — notifications can silently fail
 		}
 	}, []);
 
@@ -256,10 +236,10 @@ export default function DashboardPage() {
 			const interval = setInterval(() => {
 				fetchNotifications();
 				// Also refresh org list to pick up new memberships
-				fetch(`${API}/organizations/`, { headers: authHeaders() })
-					.then((res) => res.json())
+				apiFetch(`/organizations/`, { silent429: true })
+					.then((res) => res.ok ? res.json().catch(() => ({ data: [] })) : { data: [] })
 					.then((data) => {
-						const orgList = data.data || [];
+						const orgList = parseListResponse(OrganizationSchema, data);
 						setOrgs((prev) => {
 							if (orgList.length !== prev.length) {
 								// New org detected — update list
@@ -280,10 +260,7 @@ export default function DashboardPage() {
 
 	const handleMarkNotifRead = async (notifId: string, orgId: string) => {
 		try {
-			await fetch(`${API}/notifications/${notifId}/read/`, {
-				method: 'POST',
-				headers: authHeaders(orgId),
-			});
+			await apiFetch(`/notifications/${notifId}/read/`, { method: 'POST', orgId });
 			setNotifications((prev) => prev.map((n) => n.id === notifId ? { ...n, read: true } : n));
 			setUnreadCount((prev) => Math.max(0, prev - 1));
 		} catch {
@@ -299,33 +276,18 @@ export default function DashboardPage() {
 	}, [selectedOrg, fetchMembers]);
 
 	const handleLogout = async () => {
-		const refreshToken = localStorage.getItem('refresh_token');
-		const token = getToken();
-
-		if (refreshToken && token) {
-			try {
-				await fetch(`${API}/auth/logout/`, {
-					method: 'POST',
-					headers: authHeaders(),
-					body: JSON.stringify({ refresh_token: refreshToken }),
-				});
-			} catch {
-				// Ignore
-			}
-		}
-
-		localStorage.removeItem('access_token');
-		localStorage.removeItem('refresh_token');
+		await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
 		router.push('/auth/login');
 	};
 
 	const handleInviteMember = async () => {
 		if (!selectedOrg || !inviteEmail) return;
+		setInviteError(null);
 		setInviting(true);
 		try {
-			const res = await fetch(`${API}/organizations/${selectedOrg.id}/members/`, {
+			const res = await apiFetch(`/organizations/${selectedOrg.id}/members/`, {
 				method: 'POST',
-				headers: authHeaders(selectedOrg.id),
+				orgId: selectedOrg.id,
 				body: JSON.stringify({ email: inviteEmail, role_id: inviteRole || undefined }),
 			});
 
@@ -334,61 +296,76 @@ export default function DashboardPage() {
 				setInviteRole('');
 				setInviteOpen(false);
 				fetchMembers(selectedOrg.id);
+			} else {
+				const data = await res.json().catch(() => ({}));
+				setInviteError(data?.error ?? data?.detail ?? 'Failed to invite member');
 			}
-		} catch {
-			// Silently fail
+		} catch (err: unknown) {
+			setInviteError(err instanceof Error ? err.message : 'Failed to invite member');
 		} finally {
 			setInviting(false);
 		}
 	};
 
 	const handleRemoveMember = async (memberId: string) => {
-		if (!selectedOrg || !confirm('Remove this member from the organization?')) return;
+		if (!selectedOrg) return;
+		setActionError(null);
 		try {
-			await fetch(`${API}/organizations/${selectedOrg.id}/members/${memberId}/`, {
+			const res = await apiFetch(`/organizations/${selectedOrg.id}/members/${memberId}/`, {
 				method: 'DELETE',
-				headers: authHeaders(selectedOrg.id),
+				orgId: selectedOrg.id,
 			});
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				throw new Error(data?.error ?? data?.detail ?? 'Failed to remove member');
+			}
 			fetchMembers(selectedOrg.id);
-		} catch {
-			// Silently fail
+		} catch (err: unknown) {
+			setActionError(err instanceof Error ? err.message : 'Failed to remove member');
 		}
 	};
 
 	const handleUpdateMemberRole = async (memberId: string, roleId: string) => {
 		if (!selectedOrg) return;
+		setRoleUpdating(memberId);
 		try {
-			await fetch(`${API}/organizations/${selectedOrg.id}/members/${memberId}/`, {
+			await apiFetch(`/organizations/${selectedOrg.id}/members/${memberId}/`, {
 				method: 'PATCH',
-				headers: authHeaders(selectedOrg.id),
+				orgId: selectedOrg.id,
 				body: JSON.stringify({ role_id: roleId }),
 			});
 			fetchMembers(selectedOrg.id);
-		} catch {
-			// Silently fail
+		} catch (err: unknown) {
+			setActionError(err instanceof Error ? err.message : 'Failed to update role');
+		} finally {
+			setRoleUpdating(null);
 		}
 	};
 
 	const handleSaveOrg = async () => {
 		if (!selectedOrg) return;
+		setActionError(null);
 		setSavingOrg(true);
 		setOrgSaved(false);
 		try {
-			const res = await fetch(`${API}/organizations/${selectedOrg.id}/`, {
+			const res = await apiFetch(`/organizations/${selectedOrg.id}/`, {
 				method: 'PATCH',
-				headers: authHeaders(selectedOrg.id),
+				orgId: selectedOrg.id,
 				body: JSON.stringify({ name: orgName }),
 			});
 			if (res.ok) {
-				const data = await res.json();
+				const data = await res.json().catch(() => ({ data: null }));
 				const updated = data.data;
 				setSelectedOrg(updated);
 				setOrgs((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
 				setOrgSaved(true);
 				setTimeout(() => setOrgSaved(false), 2000);
+			} else {
+				const data = await res.json().catch(() => ({}));
+				setActionError(data?.error ?? 'Failed to save organization name');
 			}
-		} catch {
-			// Silently fail
+		} catch (err: unknown) {
+			setActionError(err instanceof Error ? err.message : 'Failed to save organization name');
 		} finally {
 			setSavingOrg(false);
 		}
@@ -405,6 +382,17 @@ export default function DashboardPage() {
 		return (
 			<div className="flex h-screen items-center justify-center">
 				<Loader2 className="h-8 w-8 animate-spin text-primary" />
+			</div>
+		);
+	}
+
+	if (!loading && orgs.length === 0) {
+		return (
+			<div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
+				<Building2 className="h-12 w-12 text-muted-foreground" />
+				<h2 className="text-2xl font-bold">No organization yet</h2>
+				<p className="text-muted-foreground max-w-sm">Create or join an organization to get started with CrewSynx.</p>
+				<Button onClick={() => router.push('/onboarding')}>Set up workspace</Button>
 			</div>
 		);
 	}
@@ -440,7 +428,7 @@ export default function DashboardPage() {
 									)}
 								</Button>
 							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+							<DropdownMenuContent align="end" className="w-[min(320px,calc(100vw-2rem))] max-h-96 overflow-y-auto">
 								{notifications.length === 0 ? (
 									<div className="p-4 text-center text-sm text-muted-foreground">No notifications</div>
 								) : (
@@ -635,6 +623,9 @@ export default function DashboardPage() {
 												'Save'
 											)}
 										</Button>
+										{actionError && (
+											<p className="text-sm text-destructive mt-1">{actionError}</p>
+										)}
 
 										{selectedOrg.invite_code && (
 											<>
@@ -675,14 +666,14 @@ export default function DashboardPage() {
 													{members.length} member{members.length !== 1 ? 's' : ''}
 												</CardDescription>
 											</div>
-											<Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+											<Dialog open={inviteOpen} onOpenChange={(open) => { setInviteOpen(open); if (!open) setInviteError(null); }}>
 												<DialogTrigger asChild>
 													<Button size="sm">
 														<UserPlus className="mr-2 h-4 w-4" />
 														Invite
 													</Button>
 												</DialogTrigger>
-												<DialogContent>
+												<DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
 													<DialogHeader>
 														<DialogTitle>Invite a team member</DialogTitle>
 														<DialogDescription>
@@ -719,6 +710,9 @@ export default function DashboardPage() {
 														)}
 													</div>
 													<DialogFooter>
+														{inviteError && (
+															<p className="text-sm text-destructive w-full">{inviteError}</p>
+														)}
 														<Button variant="outline" onClick={() => setInviteOpen(false)}>
 															Cancel
 														</Button>
@@ -774,10 +768,14 @@ export default function DashboardPage() {
 															</div>
 														</div>
 														<div className="flex items-center gap-2 shrink-0">
-															<Badge variant="secondary" className="text-xs gap-1">
-																{getRoleIcon(member.role?.name)}
-																{member.role?.name || 'No role'}
-															</Badge>
+															{roleUpdating === member.id ? (
+																<Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+															) : (
+																<Badge variant="secondary" className="text-xs gap-1">
+																	{getRoleIcon(member.role?.name)}
+																	{member.role?.name || 'No role'}
+																</Badge>
+															)}
 															{member.user?.id !== user?.id && member.role?.name?.toLowerCase() !== 'owner' && (
 																<DropdownMenu>
 																	<DropdownMenuTrigger asChild>

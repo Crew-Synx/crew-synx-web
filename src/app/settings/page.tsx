@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,8 +36,8 @@ import {
 	AlertTriangle,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-
-const API = 'https://crewsynx.switchspace.in/api/v1';
+import { apiFetch } from '@/lib/api';
+import { parseListResponse, OrganizationSchema, NotificationPrefSchema } from '@/lib/schemas';
 
 interface UserProfile {
 	id: string;
@@ -58,19 +58,6 @@ interface NotificationPref {
 	enabled: boolean;
 }
 
-function getToken() {
-	return localStorage.getItem('access_token');
-}
-
-function authHeaders(orgId?: string) {
-	const headers: Record<string, string> = {
-		'Content-Type': 'application/json',
-		Authorization: `Bearer ${getToken()}`,
-	};
-	if (orgId) headers['X-Organization-ID'] = orgId;
-	return headers;
-}
-
 const DEFAULT_PREFS: NotificationPref[] = [
 	{ key: 'member_invited', label: 'Member invitations', description: 'When a new member is invited to the organization', enabled: true },
 	{ key: 'member_removed', label: 'Member removals', description: 'When a member is removed from the organization', enabled: true },
@@ -87,6 +74,8 @@ export default function SettingsPage() {
 	const [name, setName] = useState('');
 	const [saved, setSaved] = useState(false);
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const initialTab = searchParams.get('tab') || 'profile';
 	const { theme, setTheme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 
@@ -106,18 +95,22 @@ export default function SettingsPage() {
 	const [deletingOrg, setDeletingOrg] = useState(false);
 	const [deleteOrgTarget, setDeleteOrgTarget] = useState<Organization | null>(null);
 
+	// Error states
+	const [saveProfileError, setSaveProfileError] = useState<string | null>(null);
+	const [saveNotifError, setSaveNotifError] = useState<string | null>(null);
+	const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+	const [deleteOrgError, setDeleteOrgError] = useState<string | null>(null);
+
 	useEffect(() => {
 		setMounted(true);
 	}, []);
 
 	const fetchNotifPrefs = useCallback(async (orgId: string) => {
 		try {
-			const res = await fetch(`${API}/notifications/preferences/`, {
-				headers: authHeaders(orgId),
-			});
+			const res = await apiFetch(`/notifications/preferences/`, { orgId });
 			if (res.ok) {
-				const data = await res.json();
-				const serverPrefs = data.data || [];
+				const data = await res.json().catch(() => ({ data: [] }));
+				const serverPrefs = parseListResponse(NotificationPrefSchema, data);
 				// Merge server prefs into defaults
 				setNotifPrefs((prev) =>
 					prev.map((p) => {
@@ -133,34 +126,21 @@ export default function SettingsPage() {
 
 	useEffect(() => {
 		const fetchData = async () => {
-			const token = getToken();
-			if (!token) {
-				router.push('/auth/login');
-				return;
-			}
-
 			try {
 				const [userRes, orgsRes] = await Promise.all([
-					fetch(`${API}/auth/me/`, { headers: authHeaders() }),
-					fetch(`${API}/organizations/`, { headers: authHeaders() }),
+					apiFetch('/auth/me/'),
+					apiFetch('/organizations/'),
 				]);
 
-				if (userRes.status === 401) {
-					localStorage.removeItem('access_token');
-					localStorage.removeItem('refresh_token');
-					router.push('/auth/login');
-					return;
-				}
-
 				if (userRes.ok) {
-					const data = await userRes.json();
+					const data = await userRes.json().catch(() => ({ data: null }));
 					setProfile(data.data);
-					setName(data.data.name || '');
+					setName(data.data?.name || '');
 				}
 
 				if (orgsRes.ok) {
-					const data = await orgsRes.json();
-					const orgList = data.data || [];
+					const data = await orgsRes.json().catch(() => ({ data: [] }));
+					const orgList = parseListResponse(OrganizationSchema, data);
 					setOrgs(orgList);
 					if (orgList.length > 0) {
 						fetchNotifPrefs(orgList[0].id);
@@ -177,27 +157,27 @@ export default function SettingsPage() {
 	}, [router, fetchNotifPrefs]);
 
 	const handleSaveProfile = async () => {
-		const token = getToken();
-		if (!token) return;
-
 		setSaving(true);
 		setSaved(false);
+		setSaveProfileError(null);
 
 		try {
-			const response = await fetch(`${API}/auth/me/`, {
+			const response = await apiFetch('/auth/me/', {
 				method: 'PATCH',
-				headers: authHeaders(),
 				body: JSON.stringify({ name }),
 			});
 
 			if (response.ok) {
-				const data = await response.json();
+				const data = await response.json().catch(() => ({ data: null }));
 				setProfile(data.data);
 				setSaved(true);
 				setTimeout(() => setSaved(false), 2000);
+			} else {
+				const data = await response.json().catch(() => ({}));
+				setSaveProfileError(data?.error ?? 'Failed to save profile');
 			}
-		} catch {
-			// Silent fail
+		} catch (err: unknown) {
+			setSaveProfileError(err instanceof Error ? err.message : 'Failed to save profile');
 		} finally {
 			setSaving(false);
 		}
@@ -213,43 +193,28 @@ export default function SettingsPage() {
 		if (orgs.length === 0) return;
 		setSavingNotifs(true);
 		setNotifsSaved(false);
+		setSaveNotifError(null);
 
 		try {
 			const promises = notifPrefs.map((pref) =>
-				fetch(`${API}/notifications/preferences/`, {
+				apiFetch(`/notifications/preferences/`, {
 					method: 'POST',
-					headers: authHeaders(orgs[0].id),
+					orgId: orgs[0].id,
 					body: JSON.stringify({ key: pref.key, enabled: pref.enabled }),
 				})
 			);
 			await Promise.all(promises);
 			setNotifsSaved(true);
 			setTimeout(() => setNotifsSaved(false), 2000);
-		} catch {
-			// Silent fail
+		} catch (err: unknown) {
+			setSaveNotifError(err instanceof Error ? err.message : 'Failed to save notification preferences');
 		} finally {
 			setSavingNotifs(false);
 		}
 	};
 
 	const handleLogout = async () => {
-		const refreshToken = localStorage.getItem('refresh_token');
-		const token = getToken();
-
-		if (refreshToken && token) {
-			try {
-				await fetch(`${API}/auth/logout/`, {
-					method: 'POST',
-					headers: authHeaders(),
-					body: JSON.stringify({ refresh_token: refreshToken }),
-				});
-			} catch {
-				// Ignore
-			}
-		}
-
-		localStorage.removeItem('access_token');
-		localStorage.removeItem('refresh_token');
+		await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
 		router.push('/auth/login');
 	};
 
@@ -262,18 +227,19 @@ export default function SettingsPage() {
 	const handleDeleteAccount = async () => {
 		if (deleteAccountConfirm !== profile?.email) return;
 		setDeletingAccount(true);
+		setDeleteAccountError(null);
 		try {
-			const res = await fetch(`${API}/auth/me/`, {
+			const res = await apiFetch('/auth/me/', {
 				method: 'DELETE',
-				headers: authHeaders(),
 			});
 			if (res.ok || res.status === 204) {
-				localStorage.removeItem('access_token');
-				localStorage.removeItem('refresh_token');
 				router.push('/auth/login');
+			} else {
+				const data = await res.json().catch(() => ({}));
+				setDeleteAccountError(data?.error ?? 'Failed to delete account. Please try again.');
 			}
-		} catch {
-			// Silent fail
+		} catch (err: unknown) {
+			setDeleteAccountError(err instanceof Error ? err.message : 'Failed to delete account');
 		} finally {
 			setDeletingAccount(false);
 		}
@@ -282,19 +248,23 @@ export default function SettingsPage() {
 	const handleDeleteOrg = async () => {
 		if (!deleteOrgTarget || deleteOrgConfirm !== deleteOrgTarget.name) return;
 		setDeletingOrg(true);
+		setDeleteOrgError(null);
 		try {
-			const res = await fetch(`${API}/organizations/${deleteOrgTarget.id}/`, {
+			const res = await apiFetch(`/organizations/${deleteOrgTarget.id}/`, {
 				method: 'DELETE',
-				headers: authHeaders(deleteOrgTarget.id),
+				orgId: deleteOrgTarget.id,
 			});
 			if (res.ok || res.status === 204) {
 				setOrgs((prev) => prev.filter((o) => o.id !== deleteOrgTarget.id));
 				setDeleteOrgOpen(false);
 				setDeleteOrgConfirm('');
 				setDeleteOrgTarget(null);
+			} else {
+				const data = await res.json().catch(() => ({}));
+				setDeleteOrgError(data?.error ?? 'Failed to delete organization. Please try again.');
 			}
-		} catch {
-			// Silent fail
+		} catch (err: unknown) {
+			setDeleteOrgError(err instanceof Error ? err.message : 'Failed to delete organization');
 		} finally {
 			setDeletingOrg(false);
 		}
@@ -329,7 +299,7 @@ export default function SettingsPage() {
 			</header>
 
 			<main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-				<Tabs defaultValue="profile" className="w-full">
+				<Tabs defaultValue={initialTab} className="w-full">
 					<TabsList className="mb-8 w-full justify-start">
 						<TabsTrigger value="profile" className="gap-2">
 							<User className="h-4 w-4" />
@@ -397,22 +367,27 @@ export default function SettingsPage() {
 									</div>
 								</div>
 
-								<div className="flex items-center gap-3">
-									<Button onClick={handleSaveProfile} disabled={saving}>
-										{saving ? (
-											<>
-												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-												Saving...
-											</>
-										) : saved ? (
-											<>
-												<Check className="mr-2 h-4 w-4" />
-												Saved
-											</>
-										) : (
-											'Save Changes'
-										)}
-									</Button>
+								<div className="flex flex-col gap-2">
+									{saveProfileError && (
+										<p className="text-sm text-destructive">{saveProfileError}</p>
+									)}
+									<div className="flex items-center gap-3">
+										<Button onClick={handleSaveProfile} disabled={saving}>
+											{saving ? (
+												<>
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+													Saving...
+												</>
+											) : saved ? (
+												<>
+													<Check className="mr-2 h-4 w-4" />
+													Saved
+												</>
+											) : (
+												'Save Changes'
+											)}
+										</Button>
+									</div>
 								</div>
 							</CardContent>
 						</Card>
@@ -477,7 +452,10 @@ export default function SettingsPage() {
 									</div>
 								))}
 
-								<div className="pt-2">
+								<div className="pt-2 space-y-2">
+									{saveNotifError && (
+										<p className="text-sm text-destructive">{saveNotifError}</p>
+									)}
 									<Button onClick={handleSaveNotifPrefs} disabled={savingNotifs}>
 										{savingNotifs ? (
 											<>
@@ -626,6 +604,7 @@ export default function SettingsPage() {
 												onClick={() => {
 													setDeleteOrgTarget(orgs[0]);
 													setDeleteOrgOpen(true);
+													setDeleteOrgError(null);
 												}}
 											>
 												<Building2 className="mr-2 h-3.5 w-3.5" />
@@ -646,7 +625,7 @@ export default function SettingsPage() {
 											variant="outline"
 											size="sm"
 											className="border-destructive/50 text-destructive hover:bg-destructive/10"
-											onClick={() => setDeleteAccountOpen(true)}
+											onClick={() => { setDeleteAccountOpen(true); setDeleteAccountError(null); }}
 										>
 											<Trash2 className="mr-2 h-3.5 w-3.5" />
 											Delete
@@ -661,7 +640,7 @@ export default function SettingsPage() {
 
 			{/* Delete Account Dialog */}
 			<Dialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-destructive">
 							<AlertTriangle className="h-5 w-5" />
@@ -681,6 +660,9 @@ export default function SettingsPage() {
 							onChange={(e) => setDeleteAccountConfirm(e.target.value)}
 							placeholder="your@email.com"
 						/>
+						{deleteAccountError && (
+							<p className="text-sm text-destructive">{deleteAccountError}</p>
+						)}
 					</div>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => { setDeleteAccountOpen(false); setDeleteAccountConfirm(''); }}>
@@ -706,7 +688,7 @@ export default function SettingsPage() {
 
 			{/* Delete Org Dialog */}
 			<Dialog open={deleteOrgOpen} onOpenChange={(open) => { setDeleteOrgOpen(open); if (!open) { setDeleteOrgConfirm(''); setDeleteOrgTarget(null); } }}>
-				<DialogContent>
+				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-destructive">
 							<AlertTriangle className="h-5 w-5" />
@@ -749,6 +731,9 @@ export default function SettingsPage() {
 							onChange={(e) => setDeleteOrgConfirm(e.target.value)}
 							placeholder="Organization name"
 						/>
+						{deleteOrgError && (
+							<p className="text-sm text-destructive">{deleteOrgError}</p>
+						)}
 					</div>
 					<DialogFooter>
 						<Button variant="outline" onClick={() => { setDeleteOrgOpen(false); setDeleteOrgConfirm(''); setDeleteOrgTarget(null); }}>

@@ -17,6 +17,7 @@ import {
 import { Loader2, ArrowLeft, Check, Plus } from 'lucide-react';
 import type { Organization, Branch, Department, Designation, Role } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseListResponse, BranchSchema, DepartmentSchema, DesignationSchema, RoleSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -103,7 +104,7 @@ export default function OnboardEmployeePage() {
 				orgId: org.id,
 				body: JSON.stringify(body),
 			});
-			const json = await res.json();
+			const json = await res.json().catch(() => ({}));
 
 			if (res.ok) {
 				const created = json.data || json;
@@ -173,10 +174,10 @@ export default function OnboardEmployeePage() {
 				apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
 				apiFetch(`/roles/`, { orgId }),
 			]);
-			if (brRes.ok) setBranches((await brRes.json()).data || []);
-			if (deptRes.ok) setDepartments((await deptRes.json()).data || []);
-			if (desRes.ok) setDesignations((await desRes.json()).data || []);
-			if (roleRes.ok) setRoles((await roleRes.json()).data || []);
+			if (brRes.ok) setBranches(parseListResponse(BranchSchema, await brRes.json().catch(() => ({ data: [] }))));
+			if (deptRes.ok) setDepartments(parseListResponse(DepartmentSchema, await deptRes.json().catch(() => ({ data: [] }))));
+			if (desRes.ok) setDesignations(parseListResponse(DesignationSchema, await desRes.json().catch(() => ({ data: [] }))));
+			if (roleRes.ok) setRoles(parseListResponse(RoleSchema, await roleRes.json().catch(() => ({ data: [] }))));
 		} finally {
 			setLoading(false);
 		}
@@ -208,7 +209,7 @@ export default function OnboardEmployeePage() {
 			if (res.ok) {
 				router.push('/employees');
 			} else {
-				const errData = await res.json();
+				const errData = await res.json().catch(() => ({}));
 				if (errData.details) {
 					// Validation errors: show field-level messages
 					const msgs = Object.entries(errData.details)
@@ -612,7 +613,7 @@ export default function OnboardEmployeePage() {
 
 				{/* Create New Entity Modal */}
 				<Dialog open={modal !== null} onOpenChange={open => { if (!open) setModal(null); }}>
-					<DialogContent>
+					<DialogContent className="max-h-[90vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>
 								{modal === 'role' && 'Create New Role'}

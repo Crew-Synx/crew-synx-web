@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { Organization, Attendance, RemoteCheckInRequest } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseListResponse, AttendanceSchema, RemoteCheckInRequestSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -115,8 +116,8 @@ export default function AttendancePage() {
 		try {
 			const res = await apiFetch(`/attendance/?month=${selectedMonth}`, { orgId: org.id });
 			if (res.ok) {
-				const data = await res.json();
-				setRecords(data.data || []);
+				const data = await res.json().catch(() => ({ data: [] }));
+				setRecords(parseListResponse(AttendanceSchema, data));
 			}
 		} catch { /* silent */ }
 		finally { setLoading(false); }
@@ -128,8 +129,8 @@ export default function AttendancePage() {
 		try {
 			const res = await apiFetch('/attendance/remote-requests/', { orgId: org.id });
 			if (res.ok) {
-				const data = await res.json();
-				setRemoteRequests(data.data || []);
+				const data = await res.json().catch(() => ({ data: [] }));
+				setRemoteRequests(parseListResponse(RemoteCheckInRequestSchema, data));
 			}
 		} catch { /* silent */ }
 		finally { setRemoteLoading(false); }
@@ -251,7 +252,7 @@ export default function AttendancePage() {
 				const err = await res.json().catch(() => null);
 				throw new Error(err?.error || 'QR check-in failed');
 			}
-			const data = await res.json();
+			const data = await res.json().catch(() => ({ data: {} }));
 			setScanResult(`Checked in ${data.data?.user_name || 'employee'} successfully!`);
 			setManualToken('');
 			loadAttendance();
@@ -401,6 +402,7 @@ export default function AttendancePage() {
 								</div>
 
 								<Card>
+									<div className="overflow-x-auto">
 									<Table>
 										<TableHeader>
 											<TableRow>
@@ -427,6 +429,7 @@ export default function AttendancePage() {
 											))}
 										</TableBody>
 									</Table>
+									</div>
 								</Card>
 							</>
 						)}
@@ -522,7 +525,7 @@ export default function AttendancePage() {
 										<Send className="h-4 w-4 mr-1" /> New Request
 									</Button>
 								</DialogTrigger>
-								<DialogContent>
+								<DialogContent className="max-h-[90vh] overflow-y-auto">
 									<form onSubmit={handleCreateRemote}>
 										<DialogHeader>
 											<DialogTitle>Request Remote Check-In</DialogTitle>
@@ -577,6 +580,7 @@ export default function AttendancePage() {
 							</Card>
 						) : (
 							<Card>
+								<div className="overflow-x-auto">
 								<Table>
 									<TableHeader>
 										<TableRow>
@@ -617,12 +621,13 @@ export default function AttendancePage() {
 										))}
 									</TableBody>
 								</Table>
+								</div>
 							</Card>
 						)}
 
 						{/* Review Dialog */}
 						<Dialog open={reviewOpen} onOpenChange={(open) => { if (!open) { setReviewOpen(false); setReviewRequest(null); } }}>
-							<DialogContent>
+							<DialogContent className="max-h-[90vh] overflow-y-auto">
 								<DialogHeader>
 									<DialogTitle>Review Away Ticket</DialogTitle>
 									<DialogDescription>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Building2, Search, Plus, Loader2 } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 type OnboardingStep = 'choice' | 'create' | 'join';
 
@@ -15,56 +16,49 @@ export default function OnboardingPage() {
 	const [orgName, setOrgName] = useState('');
 	const [inviteCode, setInviteCode] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 	const router = useRouter();
-
-	const getToken = () => localStorage.getItem('access_token');
 
 	const handleCreateOrg = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setError(null);
 		setIsLoading(true);
 		try {
-			const response = await fetch('https://crewsynx.switchspace.in/api/v1/organizations/', {
+			const res = await apiFetch('/organizations/', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${getToken()}`,
-				},
 				body: JSON.stringify({ name: orgName }),
 			});
 
-			if (!response.ok) {
-				const errorData = await response.json();
+			if (!res.ok) {
+				const errorData = await res.json().catch(() => ({}));
 				throw new Error(errorData.error || 'Failed to create organization');
 			}
 
 			router.push('/dashboard');
-		} catch (error) {
-			console.error(error);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : 'Failed to create organization');
 			setIsLoading(false);
 		}
 	};
 
 	const handleJoinOrg = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setError(null);
 		setIsLoading(true);
 		try {
-			const response = await fetch('https://crewsynx.switchspace.in/api/v1/organizations/join/', {
+			const res = await apiFetch('/organizations/join/', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${getToken()}`,
-				},
 				body: JSON.stringify({ invite_code: inviteCode }),
 			});
 
-			if (!response.ok) {
-				const errorData = await response.json();
+			if (!res.ok) {
+				const errorData = await res.json().catch(() => ({}));
 				throw new Error(errorData.error || 'Failed to join organization');
 			}
 
 			router.push('/dashboard');
-		} catch (error) {
-			console.error(error);
+		} catch (err: unknown) {
+			setError(err instanceof Error ? err.message : 'Failed to join organization');
 			setIsLoading(false);
 		}
 	};
@@ -140,7 +134,7 @@ export default function OnboardingPage() {
 							<form className="space-y-6" onSubmit={handleCreateOrg}>
 								<button
 									type="button"
-									onClick={() => setStep('choice')}
+									onClick={() => { setStep('choice'); setError(null); }}
 									className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
 								>
 									<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,6 +155,10 @@ export default function OnboardingPage() {
 										disabled={isLoading}
 									/>
 								</div>
+
+								{error && (
+									<p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+								)}
 
 								<Button
 									type="submit"
@@ -187,7 +185,7 @@ export default function OnboardingPage() {
 							<form className="space-y-6" onSubmit={handleJoinOrg}>
 								<button
 									type="button"
-									onClick={() => setStep('choice')}
+									onClick={() => { setStep('choice'); setError(null); }}
 									className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
 								>
 									<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,6 +206,10 @@ export default function OnboardingPage() {
 										disabled={isLoading}
 									/>
 								</div>
+
+								{error && (
+									<p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+								)}
 
 								<Button
 									type="submit"

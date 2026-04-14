@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { Employee, Organization } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseItemResponse, EmployeeSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -46,8 +47,8 @@ export default function EmployeeDetailPage() {
 		try {
 			const res = await apiFetch(`/organizations/${orgId}/employees/${memberId}/`, { orgId });
 			if (res.ok) {
-				const data = await res.json();
-				setEmployee(data.data);
+				const data = await res.json().catch(() => ({ data: null }));
+				setEmployee(parseItemResponse(EmployeeSchema, data));
 			} else {
 				router.push('/employees');
 			}

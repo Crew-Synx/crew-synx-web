@@ -8,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { PUBLIC_API_URL } from '@/lib/api';
 
 export default function LoginForm() {
   const [userId, setUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
@@ -19,9 +21,10 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/request-otp/', {
+      const response = await fetch(`${PUBLIC_API_URL}/auth/request-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId }),
@@ -31,10 +34,8 @@ export default function LoginForm() {
         let errorMessage = 'Failed to send OTP';
         try {
           const errorData = await response.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (e) {
+          if (errorData.error) errorMessage = errorData.error;
+        } catch {
           // Ignore parsing error
         }
         throw new Error(errorMessage);
@@ -42,14 +43,12 @@ export default function LoginForm() {
 
       const query = new URLSearchParams();
       query.set('user_id', userId);
-      if (redirectUri) {
-        query.set('redirect_uri', redirectUri);
-      }
+      if (redirectUri) query.set('redirect_uri', redirectUri);
 
       router.push(`/auth/verify?${query.toString()}`);
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message); // Show error to user natively for now
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
       setIsLoading(false);
     }
   };
@@ -58,6 +57,9 @@ export default function LoginForm() {
     <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="userId" className="font-semibold text-gray-700">Employee ID or Email</Label>
             <Input

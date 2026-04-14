@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -95,6 +96,11 @@ const faqs = [
 		a: 'Yes. There are no long-term contracts. Cancel anytime from your settings and you won\'t be charged again.',
 	},
 ];
+
+export const metadata: Metadata = {
+	title: 'Pricing | CrewSynx',
+	description: 'Simple, transparent pricing for teams of all sizes. Start free, scale as you grow.',
+};
 
 export default function PricingPage() {
 	return (

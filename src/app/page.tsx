@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -89,6 +90,16 @@ const stats = [
   { value: '50+', label: 'Countries' },
   { value: '4.9/5', label: 'Rating' },
 ];
+
+export const metadata: Metadata = {
+	title: 'CrewSynx — Modern Workforce Management',
+	description: 'Manage your entire workforce — attendance, payroll, departments, and more — from one powerful platform.',
+	openGraph: {
+		title: 'CrewSynx — Modern Workforce Management',
+		description: 'Manage your entire workforce from one powerful platform.',
+		type: 'website',
+	},
+};
 
 export default function Home() {
   return (

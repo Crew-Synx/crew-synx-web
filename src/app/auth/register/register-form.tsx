@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { PUBLIC_API_URL } from '@/lib/api';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -19,6 +20,7 @@ export default function RegisterForm() {
   });
   const [agreed, setAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,6 +30,7 @@ export default function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const payload: Record<string, string> = {
@@ -37,14 +40,14 @@ export default function RegisterForm() {
         organization_name: formData.company,
       };
 
-      const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/register/', {
+      const response = await fetch(`${PUBLIC_API_URL}/auth/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Registration failed');
       }
 
@@ -52,8 +55,9 @@ export default function RegisterForm() {
       query.set('user_id', formData.email);
       query.set('registration_type', 'organization');
       router.push(`/auth/verify?${query.toString()}`);
-    } catch (error) {
-      console.error(error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      setError(message);
       setIsLoading(false);
     }
   };
@@ -62,7 +66,9 @@ export default function RegisterForm() {
     <Card className="shadow-lg border-0 bg-card text-card-foreground">
       <CardContent className="pt-6">
         <form className="space-y-6" onSubmit={handleSubmit}>
-
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName" className="font-semibold">First Name</Label>

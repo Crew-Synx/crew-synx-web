@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import type { ExpenseClaim, Organization } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseListResponse, ExpenseClaimSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -75,8 +76,8 @@ export default function ExpensesPage() {
 			const qs = params.toString();
 			const res = await apiFetch(`/organizations/${orgId}/payments/expenses/${qs ? `?${qs}` : ''}`, { orgId });
 			if (res.ok) {
-				const data = await res.json();
-				setClaims(data.data || []);
+				const data = await res.json().catch(() => ({ data: [] }));
+				setClaims(parseListResponse(ExpenseClaimSchema, data));
 			}
 		} finally {
 			setLoading(false);
@@ -173,7 +174,7 @@ export default function ExpensesPage() {
 						<DialogTrigger asChild>
 							<Button><Plus className="mr-2 h-4 w-4" />New Expense</Button>
 						</DialogTrigger>
-						<DialogContent className="max-w-lg">
+						<DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
 							<DialogHeader>
 								<DialogTitle>Submit Expense Claim</DialogTitle>
 								<DialogDescription>Submit a bill or expense for reimbursement.</DialogDescription>
@@ -282,6 +283,7 @@ export default function ExpensesPage() {
 				) : (
 					<Card>
 						<CardContent className="p-0">
+							<div className="overflow-x-auto">
 							<Table>
 								<TableHeader>
 									<TableRow>
@@ -341,13 +343,14 @@ export default function ExpensesPage() {
 									})}
 								</TableBody>
 							</Table>
+							</div>
 						</CardContent>
 					</Card>
 				)}
 
 				{/* Review dialog */}
 				<Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-					<DialogContent>
+					<DialogContent className="max-h-[90vh] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>Review Expense Claim</DialogTitle>
 							<DialogDescription>

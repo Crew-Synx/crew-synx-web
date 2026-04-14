@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { Department, Organization } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseListResponse, DepartmentSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -46,8 +47,8 @@ export default function DepartmentsPage() {
 		try {
 			const res = await apiFetch(`/organizations/${orgId}/departments/`, { orgId });
 			if (res.ok) {
-				const data = await res.json();
-				setDepartments(data.data || []);
+				const data = await res.json().catch(() => ({ data: [] }));
+				setDepartments(parseListResponse(DepartmentSchema, data));
 			}
 		} finally {
 			setLoading(false);
@@ -107,7 +108,7 @@ export default function DepartmentsPage() {
 						<DialogTrigger asChild>
 							<Button><Plus className="mr-2 h-4 w-4" />Add Department</Button>
 						</DialogTrigger>
-						<DialogContent>
+						<DialogContent className="max-h-[90vh] overflow-y-auto">
 							<DialogHeader>
 								<DialogTitle>Create Department</DialogTitle>
 								<DialogDescription>

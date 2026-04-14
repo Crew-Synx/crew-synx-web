@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoginForm from './login-form';
+
+export const metadata: Metadata = {
+	title: 'Sign In | CrewSynx',
+	description: 'Sign in to CrewSynx with your employee ID and a one-time password.',
+};
 
 export default function LoginPage() {
   return (

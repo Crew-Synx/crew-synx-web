@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { Branch, Organization } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseListResponse, BranchSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -51,8 +52,8 @@ export default function BranchesPage() {
 		try {
 			const res = await apiFetch(`/organizations/${orgId}/branches/`, { orgId });
 			if (res.ok) {
-				const data = await res.json();
-				setBranches(data.data || []);
+				const data = await res.json().catch(() => ({ data: [] }));
+				setBranches(parseListResponse(BranchSchema, data));
 			}
 		} finally {
 			setLoading(false);
@@ -114,7 +115,7 @@ export default function BranchesPage() {
 						<DialogTrigger asChild>
 							<Button><Plus className="mr-2 h-4 w-4" />Add Branch</Button>
 						</DialogTrigger>
-						<DialogContent>
+						<DialogContent className="max-h-[90vh] overflow-y-auto">
 							<DialogHeader>
 								<DialogTitle>Create New Branch</DialogTitle>
 								<DialogDescription>

@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import VerifyForm from './verify-form';
+
+export const metadata: Metadata = {
+	title: 'Verify OTP | CrewSynx',
+	description: 'Enter the one-time password sent to your email to complete sign in.',
+};
 
 export default function VerifyPage() {
   return (

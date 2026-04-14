@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { MemberListItem, Organization, Branch, Department } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
+import { parseListResponse, EmployeeSchema, BranchSchema, DepartmentSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -54,16 +55,16 @@ export default function EmployeesPage() {
 				apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
 			]);
 			if (empRes.ok) {
-				const data = await empRes.json();
-				setEmployees(data.data || []);
+				const data = await empRes.json().catch(() => ({ data: [] }));
+				setEmployees(parseListResponse(EmployeeSchema, data));
 			}
 			if (brRes.ok) {
-				const brData = await brRes.json();
-				setBranches(brData.data || []);
+				const brData = await brRes.json().catch(() => ({ data: [] }));
+				setBranches(parseListResponse(BranchSchema, brData));
 			}
 			if (deptRes.ok) {
-				const deptData = await deptRes.json();
-				setDepartments(deptData.data || []);
+				const deptData = await deptRes.json().catch(() => ({ data: [] }));
+				setDepartments(parseListResponse(DepartmentSchema, deptData));
 			}
 		} finally {
 			setLoading(false);
@@ -79,8 +80,8 @@ export default function EmployeesPage() {
 		const qs = params.toString();
 		const res = await apiFetch(`/organizations/${orgId}/directory/${qs ? `?${qs}` : ''}`, { orgId });
 		if (res.ok) {
-			const data = await res.json();
-			setEmployees(data.data || []);
+			const data = await res.json().catch(() => ({ data: [] }));
+			setEmployees(parseListResponse(EmployeeSchema, data));
 		}
 	}
 
@@ -193,6 +194,7 @@ export default function EmployeesPage() {
 				) : (
 					<Card>
 						<CardContent className="p-0">
+							<div className="overflow-x-auto">
 							<Table>
 								<TableHeader>
 									<TableRow>
@@ -232,6 +234,7 @@ export default function EmployeesPage() {
 									))}
 								</TableBody>
 							</Table>
+							</div>
 						</CardContent>
 					</Card>
 				)}

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, User, LogOut, Settings, Mail, Building } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface UserData {
   id: string;
@@ -30,33 +31,17 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       try {
-        const response = await fetch('https://crewsynx.switchspace.in/api/v1/auth/me/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.status === 401) {
-          // Token expired, could implement refresh here, but for now just logout
-          handleLogout();
-          return;
-        }
+        const response = await apiFetch('/auth/me/');
 
         if (!response.ok) {
           throw new Error('Failed to fetch profile');
         }
 
-        const data = await response.json();
+        const data = await response.json().catch(() => ({ data: null }));
         setProfile(data.data);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch profile');
       } finally {
         setLoading(false);
       }
@@ -66,25 +51,7 @@ export default function ProfilePage() {
   }, [router]);
 
   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      try {
-        await fetch('https://crewsynx.switchspace.in/api/v1/auth/logout/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-      } catch (e) {
-        console.error("Logout request failed", e);
-      }
-    }
-
-    // Clear storage regardless of API response
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     router.push('/auth/login');
   };
 
@@ -153,9 +120,9 @@ export default function ProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="outline" className="w-full justify-start">Edit Profile</Button>
-            <Button variant="outline" className="w-full justify-start">Security Settings</Button>
-            <Button variant="outline" className="w-full justify-start">Notification Preferences</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/settings')}>Edit Profile</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/settings?tab=security')}>Security Settings</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/settings?tab=notifications')}>Notification Preferences</Button>
           </CardContent>
         </Card>
 
