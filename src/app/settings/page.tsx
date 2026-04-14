@@ -114,8 +114,8 @@ export default function SettingsPage() {
 				// Merge server prefs into defaults
 				setNotifPrefs((prev) =>
 					prev.map((p) => {
-						const match = serverPrefs.find((sp: { key: string; enabled: boolean }) => sp.key === p.key);
-						return match ? { ...p, enabled: match.enabled } : p;
+						const match = serverPrefs.find((sp) => sp.notification_type === p.key);
+						return match ? { ...p, enabled: match.is_enabled } : p;
 					})
 				);
 			}

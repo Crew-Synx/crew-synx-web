@@ -8,7 +8,7 @@ export const ApiErrorSchema = z.object({
 	error: z.string().optional(),
 	message: z.string().optional(),
 	detail: z.string().optional(),
-	details: z.record(z.unknown()).optional(),
+	details: z.record(z.string(), z.unknown()).optional(),
 }).passthrough();
 
 export type ApiError = z.infer<typeof ApiErrorSchema>;
@@ -70,64 +70,94 @@ export const BranchSchema = z.object({
 	code: z.string(),
 	is_head_office: z.boolean(),
 	is_active: z.boolean(),
+	employee_count: z.number(),
+	created_at: z.string(),
 }).passthrough();
 
 export const DepartmentSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	is_active: z.boolean(),
+	employee_count: z.number(),
+	created_at: z.string(),
 }).passthrough();
 
 export const DesignationSchema = z.object({
 	id: z.string(),
 	title: z.string(),
+	level: z.number(),
+	is_active: z.boolean(),
+	created_at: z.string(),
 }).passthrough();
 
 export const RoleSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	priority: z.number(),
+	is_system: z.boolean(),
 }).passthrough();
 
 export const MemberSchema = z.object({
 	id: z.string(),
-	user: z.union([
-		z.string(),
-		z.object({ id: z.string(), email: z.string(), name: z.string() }).passthrough(),
-	]),
+	user: z.object({ id: z.string(), email: z.string(), name: z.string() }).passthrough(),
+	role: z.object({ id: z.string(), name: z.string() }).passthrough(),
+	joined_at: z.string(),
 }).passthrough();
 
 export const EmployeeSchema = z.object({
 	id: z.string(),
+	user: z.string(),
+	user_email: z.string(),
+	user_name: z.string(),
 	employee_id: z.string(),
 	employment_type: z.string(),
 	status: z.string(),
+	joined_at: z.string(),
+	updated_at: z.string(),
 }).passthrough();
 
 export const AttendanceSchema = z.object({
 	id: z.string(),
+	user: z.string(),
+	user_name: z.string(),
 	date: z.string(),
 	status: z.string(),
+	created_at: z.string(),
+	updated_at: z.string(),
 }).passthrough();
 
 export const RemoteCheckInRequestSchema = z.object({
 	id: z.string(),
+	user: z.string(),
+	user_name: z.string(),
 	date: z.string(),
 	reason: z.string(),
 	status: z.string(),
+	created_at: z.string(),
 }).passthrough();
 
 export const ExpenseClaimSchema = z.object({
 	id: z.string(),
 	title: z.string(),
+	expense_type: z.string(),
 	amount: z.string(),
+	currency: z.string(),
+	expense_date: z.string(),
 	status: z.string(),
+	employee: z.string(),
+	employee_name: z.string(),
+	employee_email: z.string(),
+	created_at: z.string(),
+	updated_at: z.string(),
 }).passthrough();
 
 export const NotificationSchema = z.object({
 	id: z.string(),
-	title: z.string().optional(),
-	message: z.string().optional(),
+	notification_type: z.string(),
+	title: z.string(),
+	message: z.string(),
+	read: z.boolean(),
+	created_at: z.string(),
 }).passthrough();
 
 export const NotificationPrefSchema = z.object({
