@@ -207,7 +207,18 @@ export function parseResponse<T>(
 export function getApiErrorMessage(data: unknown, fallback: string): string {
 	const parsed = ApiErrorSchema.safeParse(data);
 	if (!parsed.success) return fallback;
-	return parsed.data.error ?? parsed.data.message ?? parsed.data.detail ?? fallback;
+
+	const { message, detail, details } = parsed.data;
+
+	// For validation errors, extract the first field-level message from details
+	if (details && typeof details === 'object') {
+		for (const value of Object.values(details)) {
+			if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+			if (typeof value === 'string') return value;
+		}
+	}
+
+	return message ?? detail ?? fallback;
 }
 
 export function getRetryAfterSeconds(headers: Headers): number | null {
