@@ -9,12 +9,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PUBLIC_API_URL } from '@/lib/api';
+import { getApiErrorMessage, getRetryAfterSeconds, RequestOtpPayloadSchema, VerifyOtpPayloadSchema } from '@/lib/schemas';
 
 export default function VerifyForm() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(30);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -28,25 +30,65 @@ export default function VerifyForm() {
     return () => clearTimeout(timer);
   }, [resendCountdown]);
 
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = setTimeout(() => setRetryAfterSeconds((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [retryAfterSeconds]);
+
   const handleResend = useCallback(async () => {
     if (!userId || isResending || resendCountdown > 0) return;
+
+    const payloadResult = RequestOtpPayloadSchema.safeParse({ user_id: userId.trim() });
+    if (!payloadResult.success) {
+      setError('Missing user identifier. Please go back and sign in again.');
+      return;
+    }
+
     setIsResending(true);
     try {
-      await fetch(`${PUBLIC_API_URL}/auth/request-otp/`, {
+      const response = await fetch(`${PUBLIC_API_URL}/auth/request-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify(payloadResult.data),
       });
+
+      if (!response.ok) {
+        let retrySeconds: number | null = null;
+        if (response.status === 429) {
+          retrySeconds = getRetryAfterSeconds(response.headers) ?? 60;
+          setRetryAfterSeconds(retrySeconds);
+        }
+
+        const errorData = await response.json().catch(() => ({}));
+        const fallback = response.status === 429 && retrySeconds
+          ? `Too many requests. Try again in ${retrySeconds} seconds.`
+          : 'Unable to resend code right now.';
+        setError(getApiErrorMessage(errorData, fallback));
+        return;
+      }
+
+      setError(null);
       setResendCountdown(30);
     } catch {
-      // Resend failure is non-fatal
+      setError('Unable to resend code right now. Please try again.');
     } finally {
       setIsResending(false);
     }
-  }, [userId, isResending, resendCountdown]);
+  }, [userId, isResending, resendCountdown, retryAfterSeconds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const payloadResult = VerifyOtpPayloadSchema.safeParse({
+      user_id: userId?.trim() ?? '',
+      otp: otp.trim(),
+    });
+    if (!payloadResult.success) {
+      setError('Please enter a valid 6-digit code.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -55,13 +97,22 @@ export default function VerifyForm() {
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, otp }),
+        body: JSON.stringify(payloadResult.data),
         credentials: 'include',
       });
 
       if (!response.ok) {
+        let retrySeconds: number | null = null;
+        if (response.status === 429) {
+          retrySeconds = getRetryAfterSeconds(response.headers) ?? 60;
+          setRetryAfterSeconds(retrySeconds);
+        }
+
         const data = await response.json().catch(() => ({}));
-        throw new Error(data?.error ?? 'Invalid or expired OTP');
+        const fallback = response.status === 429 && retrySeconds
+          ? `Too many requests. Try again in ${retrySeconds} seconds.`
+          : 'Invalid or expired OTP';
+        throw new Error(getApiErrorMessage(data, fallback));
       }
 
       if (redirectUri) {
@@ -111,13 +162,15 @@ export default function VerifyForm() {
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold"
-            disabled={isLoading || otp.length < 6}
+            disabled={isLoading || otp.length < 6 || retryAfterSeconds > 0}
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Verifying...
               </>
+            ) : retryAfterSeconds > 0 ? (
+              `Try again in ${retryAfterSeconds}s`
             ) : (
               'Verify & Sign In'
             )}

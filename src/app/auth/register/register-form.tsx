@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PUBLIC_API_URL } from '@/lib/api';
+import { getApiErrorMessage, getRetryAfterSeconds, RegisterPayloadSchema } from '@/lib/schemas';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
@@ -21,7 +22,14 @@ export default function RegisterForm() {
   const [agreed, setAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number>(0);
   const router = useRouter();
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = setTimeout(() => setRetryAfterSeconds((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [retryAfterSeconds]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,30 +37,46 @@ export default function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (retryAfterSeconds > 0) return;
+
+    const payloadResult = RegisterPayloadSchema.safeParse({
+      email: formData.email.trim(),
+      name: `${formData.firstName} ${formData.lastName}`.trim(),
+      registration_type: 'organization',
+      organization_name: formData.company.trim(),
+    });
+
+    if (!payloadResult.success) {
+      setError('Please complete all fields with valid values.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
     try {
-      const payload: Record<string, string> = {
-        email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
-        registration_type: 'organization',
-        organization_name: formData.company,
-      };
-
       const response = await fetch(`${PUBLIC_API_URL}/auth/register/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payloadResult.data),
       });
 
       if (!response.ok) {
+        let retrySeconds: number | null = null;
+        if (response.status === 429) {
+          retrySeconds = getRetryAfterSeconds(response.headers) ?? 60;
+          setRetryAfterSeconds(retrySeconds);
+        }
+
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Registration failed');
+        const fallback = response.status === 429 && retrySeconds
+          ? `Too many requests. Try again in ${retrySeconds} seconds.`
+          : 'Registration failed';
+        throw new Error(getApiErrorMessage(errorData, fallback));
       }
 
       const query = new URLSearchParams();
-      query.set('user_id', formData.email);
+      query.set('user_id', payloadResult.data.email);
       query.set('registration_type', 'organization');
       router.push(`/auth/verify?${query.toString()}`);
     } catch (err: unknown) {
@@ -141,13 +165,15 @@ export default function RegisterForm() {
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold"
-            disabled={isLoading || !agreed}
+            disabled={isLoading || !agreed || retryAfterSeconds > 0}
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Creating account...
               </>
+            ) : retryAfterSeconds > 0 ? (
+              `Try again in ${retryAfterSeconds}s`
             ) : (
               'Sign Up'
             )}

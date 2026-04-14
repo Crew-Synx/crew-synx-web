@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,17 +9,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { PUBLIC_API_URL } from '@/lib/api';
+import { getApiErrorMessage, getRetryAfterSeconds, RequestOtpPayloadSchema } from '@/lib/schemas';
 
 export default function LoginForm() {
   const [userId, setUserId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number>(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUri = searchParams.get('redirect_uri');
 
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) return;
+    const timer = setTimeout(() => setRetryAfterSeconds((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [retryAfterSeconds]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (retryAfterSeconds > 0) return;
+
+    const payloadResult = RequestOtpPayloadSchema.safeParse({ user_id: userId.trim() });
+    if (!payloadResult.success) {
+      setError('Please enter a valid employee ID or email.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -27,22 +43,26 @@ export default function LoginForm() {
       const response = await fetch(`${PUBLIC_API_URL}/auth/request-otp/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
+        body: JSON.stringify(payloadResult.data),
       });
 
       if (!response.ok) {
-        let errorMessage = 'Failed to send OTP';
-        try {
-          const errorData = await response.json();
-          if (errorData.error) errorMessage = errorData.error;
-        } catch {
-          // Ignore parsing error
+        let retrySeconds: number | null = null;
+        if (response.status === 429) {
+          retrySeconds = getRetryAfterSeconds(response.headers) ?? 60;
+          setRetryAfterSeconds(retrySeconds);
+        }
+
+        const errorData = await response.json().catch(() => ({}));
+        let errorMessage = getApiErrorMessage(errorData, 'Failed to send OTP');
+        if (response.status === 429 && retrySeconds) {
+          errorMessage = `Too many requests. Try again in ${retrySeconds} seconds.`;
         }
         throw new Error(errorMessage);
       }
 
       const query = new URLSearchParams();
-      query.set('user_id', userId);
+      query.set('user_id', payloadResult.data.user_id);
       if (redirectUri) query.set('redirect_uri', redirectUri);
 
       router.push(`/auth/verify?${query.toString()}`);
@@ -79,13 +99,15 @@ export default function LoginForm() {
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold"
-            disabled={isLoading || !userId}
+            disabled={isLoading || !userId.trim() || retryAfterSeconds > 0}
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Sending OTP...
               </>
+            ) : retryAfterSeconds > 0 ? (
+              `Try again in ${retryAfterSeconds}s`
             ) : (
               'Continue'
             )}

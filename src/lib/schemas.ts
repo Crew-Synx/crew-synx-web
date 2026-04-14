@@ -13,6 +13,31 @@ export const ApiErrorSchema = z.object({
 
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 
+export const RequestOtpPayloadSchema = z.object({
+	user_id: z.string().min(1),
+});
+
+export const RegisterPayloadSchema = z.object({
+	email: z.string().email(),
+	name: z.string().min(1),
+	registration_type: z.literal('organization'),
+	organization_name: z.string().min(1),
+});
+
+export const VerifyOtpPayloadSchema = z.object({
+	user_id: z.string().min(1),
+	otp: z.string().regex(/^\d{6}$/),
+});
+
+export const VerifyOtpDjangoResponseSchema = z.object({
+	data: z.object({
+		access_token: z.string().min(1),
+		refresh_token: z.string().optional(),
+		organizations: z.array(z.unknown()).optional(),
+		user: z.unknown().optional(),
+	}).passthrough(),
+}).passthrough();
+
 function apiListEnvelope<T extends z.ZodType>(itemSchema: T) {
 	return z.object({ data: z.array(itemSchema) }).passthrough();
 }
@@ -147,6 +172,26 @@ export function parseResponse<T>(
 		console.warn('[API Schema Validation]', result.error.issues);
 	}
 	return fallback;
+}
+
+export function getApiErrorMessage(data: unknown, fallback: string): string {
+	const parsed = ApiErrorSchema.safeParse(data);
+	if (!parsed.success) return fallback;
+	return parsed.data.error ?? parsed.data.message ?? parsed.data.detail ?? fallback;
+}
+
+export function getRetryAfterSeconds(headers: Headers): number | null {
+	const retryAfter = headers.get('Retry-After');
+	if (!retryAfter) return null;
+
+	const asNumber = Number.parseInt(retryAfter, 10);
+	if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+
+	const asDateMs = Date.parse(retryAfter);
+	if (Number.isNaN(asDateMs)) return null;
+
+	const seconds = Math.ceil((asDateMs - Date.now()) / 1000);
+	return seconds > 0 ? seconds : null;
 }
 
 /**
