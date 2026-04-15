@@ -19,7 +19,7 @@ function cookieBase(req: NextRequest) {
 
 /** Forward response headers except those that would break the proxy */
 function copyResponseHeaders(from: Response, to: NextResponse) {
-  const skip = new Set(['set-cookie', 'transfer-encoding', 'connection']);
+  const skip = new Set(['set-cookie', 'transfer-encoding', 'connection', 'content-encoding']);
   from.headers.forEach((value, key) => {
     if (!skip.has(key.toLowerCase())) {
       to.headers.set(key, value);
@@ -128,7 +128,8 @@ export async function handler(req: NextRequest, { params }: { params: Promise<{ 
     return unauthRes;
   }
 
-  const responseBody = await djangoRes.arrayBuffer();
+  const NO_BODY_STATUSES = new Set([204, 304]);
+  const responseBody = NO_BODY_STATUSES.has(djangoRes.status) ? null : await djangoRes.arrayBuffer();
   const proxyResponse = new NextResponse(responseBody, {
     status: djangoRes.status,
     statusText: djangoRes.statusText,

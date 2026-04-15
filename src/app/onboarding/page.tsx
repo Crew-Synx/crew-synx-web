@@ -30,6 +30,11 @@ export default function OnboardingPage() {
 				throw new Error(errorData.message || errorData.error || 'Failed to create organization');
 			}
 
+			const orgData = await res.json().catch(() => ({}));
+			if (orgData?.data) {
+				localStorage.setItem('selected_org', JSON.stringify(orgData.data));
+			}
+
 			router.push('/setup');
 		} catch (err: unknown) {
 			setError(err instanceof Error ? err.message : 'Failed to create organization');

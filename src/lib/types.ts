@@ -1,3 +1,28 @@
+// ─── Permission helpers ──────────────────────────────────────────────
+// Chat access is governed by channel membership, not role-based permissions.
+// These categories must be excluded from every permission UI across the app.
+export const CHAT_PERMISSION_CATEGORIES = new Set(['room', 'chat', 'slash_command']);
+
+export interface Permission {
+	key: string;
+	description: string;
+}
+
+/** Filter a flat list of permissions, removing chat-related ones. */
+export function filterDisplayPermissions(permissions: Permission[]): Permission[] {
+	return permissions.filter(p => !CHAT_PERMISSION_CATEGORIES.has(p.key.split('.')[0]));
+}
+
+/** Group a filtered permission list by category prefix (e.g. "org", "member"). */
+export function groupPermissions(permissions: Permission[]): Record<string, Permission[]> {
+	return filterDisplayPermissions(permissions).reduce<Record<string, Permission[]>>((acc, p) => {
+		const cat = p.key.split('.')[0];
+		if (!acc[cat]) acc[cat] = [];
+		acc[cat].push(p);
+		return acc;
+	}, {});
+}
+
 // ─── User & Auth ────────────────────────────────────────────────────
 
 export interface UserData {

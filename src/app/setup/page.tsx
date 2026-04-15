@@ -13,9 +13,10 @@ import {
 } from '@/components/ui/select';
 import {
 	Loader2, Shield, Building2, Layers, Briefcase,
-	Plus, Trash2, Check, ChevronRight, ArrowRight, Rocket, Copy,
+	Plus, Trash2, Check, ChevronRight, ChevronDown, ArrowRight, Rocket, Copy,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { groupPermissions, type Permission } from '@/lib/types';
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -91,13 +92,39 @@ export default function SetupPage() {
 	const [departments, setDepartments] = useState<DepartmentItem[]>([]);
 	const [designations, setDesignations] = useState<DesignationItem[]>([]);
 
+	const loadAllData = useCallback(async (orgId: string) => {
+		const [rolesRes, templatesRes, branchRes, deptRes, desigRes] = await Promise.all([
+			apiFetch('/roles/', { orgId }).catch(() => null),
+			apiFetch('/roles/templates/', { orgId }).catch(() => null),
+			apiFetch(`/organizations/${orgId}/branches/`, { orgId }).catch(() => null),
+			apiFetch(`/organizations/${orgId}/departments/`, { orgId }).catch(() => null),
+			apiFetch(`/organizations/${orgId}/designations/`, { orgId }).catch(() => null),
+		]);
+
+		if (rolesRes?.ok) { const d = await rolesRes.json().catch(() => ({})); setRoles(d.data || []); }
+		if (templatesRes?.ok) { const d = await templatesRes.json().catch(() => ({})); setTemplates(d.data || []); }
+		if (branchRes?.ok) { const d = await branchRes.json().catch(() => ({})); setBranches(d.data || []); }
+		if (deptRes?.ok) { const d = await deptRes.json().catch(() => ({})); setDepartments(d.data || []); }
+		if (desigRes?.ok) { const d = await desigRes.json().catch(() => ({})); setDesignations(d.data || []); }
+	}, []);
+
 	useEffect(() => {
 		const init = async () => {
 			try {
 				const res = await apiFetch('/organizations/');
 				if (!res.ok) { router.push('/auth/login'); return; }
 				const data = await res.json().catch(() => ({}));
-				const orgList = data.data || [];
+				let orgList = data.data || [];
+
+				// Fallback: if API returned empty but we just created an org,
+				// use the locally stored org to avoid redirect loop
+				if (orgList.length === 0) {
+					const cached = localStorage.getItem('selected_org');
+					if (cached) {
+						try { orgList = [JSON.parse(cached)]; } catch { /* ignore */ }
+					}
+				}
+
 				if (orgList.length === 0) { router.push('/onboarding'); return; }
 				const o = orgList[0];
 				setOrg(o);
@@ -111,23 +138,7 @@ export default function SetupPage() {
 			}
 		};
 		init();
-	}, [router]);
-
-	const loadAllData = async (orgId: string) => {
-		const [rolesRes, templatesRes, branchRes, deptRes, desigRes] = await Promise.all([
-			apiFetch('/roles/', { orgId }),
-			apiFetch('/roles/templates/', { orgId }),
-			apiFetch(`/organizations/${orgId}/branches/`, { orgId }),
-			apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
-			apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
-		]);
-
-		if (rolesRes.ok) { const d = await rolesRes.json().catch(() => ({})); setRoles(d.data || []); }
-		if (templatesRes.ok) { const d = await templatesRes.json().catch(() => ({})); setTemplates(d.data || []); }
-		if (branchRes.ok) { const d = await branchRes.json().catch(() => ({})); setBranches(d.data || []); }
-		if (deptRes.ok) { const d = await deptRes.json().catch(() => ({})); setDepartments(d.data || []); }
-		if (desigRes.ok) { const d = await desigRes.json().catch(() => ({})); setDesignations(d.data || []); }
-	};
+	}, [router, loadAllData]);
 
 	const reloadStep = useCallback(async (step: StepKey) => {
 		if (!org) return;
@@ -341,6 +352,54 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 	const [creating, setCreating] = useState(false);
 	const [newRole, setNewRole] = useState('');
 	const [saving, setSaving] = useState(false);
+	const [expandedRoleId, setExpandedRoleId] = useState<string | null>(null);
+	const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
+	const [pendingPerms, setPendingPerms] = useState<Record<string, Set<string>>>({});
+	const [savingPermsFor, setSavingPermsFor] = useState<string | null>(null);
+	const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
+
+	useEffect(() => {
+		apiFetch('/roles/permissions/', { orgId }).then(async r => {
+			if (r.ok) {
+				const d = await r.json().catch(() => ({}));
+				setAllPermissions(d.data || []);
+			}
+		});
+	}, [orgId]);
+
+	const handleToggleExpand = (role: RoleItem) => {
+		if (role.name === 'Owner') return;
+		if (expandedRoleId === role.id) {
+			setExpandedRoleId(null);
+		} else {
+			setExpandedRoleId(role.id);
+			if (!pendingPerms[role.id]) {
+				setPendingPerms(prev => ({ ...prev, [role.id]: new Set(role.permissions ?? []) }));
+			}
+		}
+	};
+
+	const togglePerm = (roleId: string, permKey: string) => {
+		setPendingPerms(prev => {
+			const current = new Set(prev[roleId] ?? []);
+			if (current.has(permKey)) current.delete(permKey); else current.add(permKey);
+			return { ...prev, [roleId]: current };
+		});
+	};
+
+	const handleSavePerms = async (roleId: string) => {
+		setSavingPermsFor(roleId);
+		try {
+			const perms = Array.from(pendingPerms[roleId] ?? []);
+			const res = await apiFetch(`/roles/${roleId}/`, {
+				method: 'PATCH', orgId,
+				body: JSON.stringify({ permissions: perms }),
+			});
+			if (res.ok) { onReload(); setExpandedRoleId(null); }
+		} finally {
+			setSavingPermsFor(null);
+		}
+	};
 
 	const handleApplyTemplate = async (templateName: string) => {
 		setApplying(templateName);
@@ -374,9 +433,16 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 	};
 
 	const handleDelete = async (roleId: string) => {
-		await apiFetch(`/roles/${roleId}/`, { method: 'DELETE', orgId });
-		onReload();
+		setDeletingRoleId(roleId);
+		try {
+			await apiFetch(`/roles/${roleId}/`, { method: 'DELETE', orgId });
+			onReload();
+		} finally {
+			setDeletingRoleId(null);
+		}
 	};
+
+	const grouped = groupPermissions(allPermissions);
 
 	const nonOwnerRoles = roles.filter(r => r.name !== 'Owner');
 
@@ -395,47 +461,56 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 			{/* Role Templates */}
 			<div>
 				<p className="text-sm font-medium mb-3">Templates</p>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-					{templates.map(t => {
-						const applied = t.already_applied || nonOwnerRoles.some(r => r.name === t.name);
-						return (
-							<div
-								key={t.name}
-								className={`flex items-start justify-between p-4 rounded-lg border transition-colors ${applied
-									? 'bg-primary/5 border-primary/20'
-									: 'bg-muted/30 border-border/50 hover:border-border'
-									}`}
-							>
-								<div className="flex-1 min-w-0 mr-3">
-									<p className="font-medium text-sm">{t.name}</p>
-									<p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+				{templates.length === 0 ? (
+					<div className="flex flex-col items-center justify-center py-6 rounded-lg border border-dashed border-border/50 text-center gap-3">
+						<p className="text-sm text-muted-foreground">Templates could not be loaded.</p>
+						<Button variant="outline" size="sm" onClick={onReload}>
+							<Loader2 className="mr-2 h-3.5 w-3.5" /> Retry
+						</Button>
+					</div>
+				) : (
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+						{templates.map(t => {
+							const applied = t.already_applied || nonOwnerRoles.some(r => r.name === t.name);
+							return (
+								<div
+									key={t.name}
+									className={`flex items-start justify-between p-4 rounded-lg border transition-colors ${applied
+										? 'bg-primary/5 border-primary/20'
+										: 'bg-muted/30 border-border/50 hover:border-border'
+										}`}
+								>
+									<div className="flex-1 min-w-0 mr-3">
+										<p className="font-medium text-sm">{t.name}</p>
+										<p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+									</div>
+									{applied ? (
+										<Badge variant="secondary" className="shrink-0 text-xs gap-1">
+											<Check className="h-3 w-3" /> Added
+										</Badge>
+									) : (
+										<Button
+											size="sm"
+											variant="outline"
+											className="shrink-0"
+											disabled={applying === t.name}
+											onClick={() => handleApplyTemplate(t.name)}
+										>
+											{applying === t.name ? (
+												<Loader2 className="h-3.5 w-3.5 animate-spin" />
+											) : (
+												<>
+													<Copy className="mr-1.5 h-3.5 w-3.5" />
+													Use
+												</>
+											)}
+										</Button>
+									)}
 								</div>
-								{applied ? (
-									<Badge variant="secondary" className="shrink-0 text-xs gap-1">
-										<Check className="h-3 w-3" /> Added
-									</Badge>
-								) : (
-									<Button
-										size="sm"
-										variant="outline"
-										className="shrink-0"
-										disabled={applying === t.name}
-										onClick={() => handleApplyTemplate(t.name)}
-									>
-										{applying === t.name ? (
-											<Loader2 className="h-3.5 w-3.5 animate-spin" />
-										) : (
-											<>
-												<Copy className="mr-1.5 h-3.5 w-3.5" />
-												Use
-											</>
-										)}
-									</Button>
-								)}
-							</div>
-						);
-					})}
-				</div>
+							);
+						})}
+					</div>
+				)}
 			</div>
 
 			{/* Current org roles */}
@@ -443,27 +518,91 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 				<div>
 					<p className="text-sm font-medium mb-3">Your Roles</p>
 					<div className="space-y-2">
-						{roles.map(role => (
-							<div key={role.id} className="flex items-center justify-between py-3 px-4 rounded-lg border">
-								<div className="flex items-center gap-3">
-									<div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${role.name === 'Owner' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-										}`}>
-										{role.priority}
+						{roles.map(role => {
+							const isOwner = role.name === 'Owner';
+							const isExpanded = expandedRoleId === role.id;
+							const pending = pendingPerms[role.id];
+							return (
+								<div key={role.id} className="rounded-lg border overflow-hidden">
+									{/* Header row */}
+									<div className="flex items-center justify-between py-3 px-4">
+										<button
+											type="button"
+											className="flex items-center gap-3 flex-1 text-left"
+											onClick={() => handleToggleExpand(role)}
+											disabled={isOwner}
+										>
+											<div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isOwner ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+												}`}>
+												{role.priority}
+											</div>
+											<div>
+												<p className="font-medium text-sm">{role.name}</p>
+												{isOwner
+													? <p className="text-xs text-muted-foreground">Auto-assigned to you</p>
+													: <p className="text-xs text-muted-foreground">{(role.permissions ?? []).length} permissions</p>
+												}
+											</div>
+										</button>
+										<div className="flex items-center gap-1 shrink-0">
+											{!isOwner && (
+												<Button
+													variant="ghost" size="icon" className="h-8 w-8"
+													disabled={deletingRoleId === role.id}
+													onClick={() => handleDelete(role.id)}
+												>
+													{deletingRoleId === role.id
+														? <Loader2 className="h-4 w-4 animate-spin" />
+														: <Trash2 className="h-4 w-4 text-destructive" />
+													}
+												</Button>
+											)}
+											{!isOwner && (
+												<Button
+													variant="ghost" size="icon" className="h-8 w-8"
+													onClick={() => handleToggleExpand(role)}
+												>
+													<ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''
+														}`} />
+												</Button>
+											)}
+										</div>
 									</div>
-									<div>
-										<p className="font-medium">{role.name}</p>
-										{role.name === 'Owner' && (
-											<p className="text-xs text-muted-foreground">Auto-assigned to you</p>
-										)}
-									</div>
+
+									{/* Expanded: permission editor */}
+									{isExpanded && pending && (
+										<div className="border-t px-4 py-4 space-y-5 bg-muted/20">
+											{Object.entries(grouped).map(([category, perms]) => (
+												<div key={category}>
+													<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{category}</p>
+													<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+														{perms.map(p => (
+															<label key={p.key} className="flex items-start gap-2 cursor-pointer group">
+																<Checkbox
+																	checked={pending.has(p.key)}
+																	onCheckedChange={() => togglePerm(role.id, p.key)}
+																	className="mt-0.5 shrink-0"
+																/>
+																<div>
+																	<p className="text-xs font-medium leading-none">{p.key}</p>
+																	<p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
+																</div>
+															</label>
+														))}
+													</div>
+												</div>
+											))}
+											<div className="flex justify-end gap-2 pt-2">
+												<Button variant="ghost" size="sm" onClick={() => setExpandedRoleId(null)}>Cancel</Button>
+												<Button size="sm" onClick={() => handleSavePerms(role.id)} disabled={savingPermsFor === role.id}>
+													{savingPermsFor === role.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save Permissions'}
+												</Button>
+											</div>
+										</div>
+									)}
 								</div>
-								{role.name !== 'Owner' && (
-									<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(role.id)}>
-										<Trash2 className="h-4 w-4 text-destructive" />
-									</Button>
-								)}
-							</div>
-						))}
+							);
+						})}
 					</div>
 				</div>
 			)}
