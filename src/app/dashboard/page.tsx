@@ -391,7 +391,7 @@ export default function DashboardPage() {
 			<div className="flex min-h-screen flex-col items-center justify-center gap-4 p-8 text-center">
 				<Building2 className="h-12 w-12 text-muted-foreground" />
 				<h2 className="text-2xl font-bold">No organization yet</h2>
-				<p className="text-muted-foreground max-w-sm">Create or join an organization to get started with CrewSynx.</p>
+				<p className="text-muted-foreground max-w-sm">Create an organization to get started with CrewSynx.</p>
 				<Button onClick={() => router.push('/onboarding')}>Set up workspace</Button>
 			</div>
 		);
@@ -820,7 +820,7 @@ export default function DashboardPage() {
 							<Building2 className="h-12 w-12 text-muted-foreground/40" />
 							<h2 className="mt-4 text-lg font-semibold">No organization yet</h2>
 							<p className="mt-1 text-sm text-muted-foreground">
-								Create or join an organization to get started.
+								Create an organization to get started.
 							</p>
 							<Button className="mt-6" asChild>
 								<Link href="/onboarding">
