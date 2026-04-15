@@ -30,7 +30,7 @@ export default function OnboardingPage() {
 				throw new Error(errorData.message || errorData.error || 'Failed to create organization');
 			}
 
-			router.push('/dashboard');
+			router.push('/setup');
 		} catch (err: unknown) {
 			setError(err instanceof Error ? err.message : 'Failed to create organization');
 			setIsLoading(false);

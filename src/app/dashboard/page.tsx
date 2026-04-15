@@ -186,17 +186,15 @@ export default function DashboardPage() {
 						setOrgName(org.name);
 
 						// Redirect to setup wizard if org has no branches yet (first-time setup)
-						if (!localStorage.getItem('setup_complete')) {
-							const branchRes = await apiFetch(`/organizations/${org.id}/branches/`, { orgId: org.id });
-							if (branchRes.ok) {
-								const branchData = await branchRes.json().catch(() => ({ data: [] }));
-								const branchList = parseListResponse(BranchSchema, branchData);
-								if (branchList.length === 0) {
-									router.push('/setup');
-									return;
-								}
-								localStorage.setItem('setup_complete', 'true');
+						const branchRes = await apiFetch(`/organizations/${org.id}/branches/`, { orgId: org.id });
+						if (branchRes.ok) {
+							const branchData = await branchRes.json().catch(() => ({ data: [] }));
+							const branchList = parseListResponse(BranchSchema, branchData);
+							if (branchList.length === 0 && !localStorage.getItem('setup_complete')) {
+								router.push('/setup');
+								return;
 							}
+							localStorage.setItem('setup_complete', 'true');
 						}
 					}
 				}
