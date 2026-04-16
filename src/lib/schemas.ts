@@ -106,14 +106,24 @@ export const MemberSchema = z.object({
 
 export const EmployeeSchema = z.object({
 	id: z.string(),
-	user: z.string(),
-	user_email: z.string(),
-	user_name: z.string(),
-	employee_id: z.string(),
-	employment_type: z.string(),
-	status: z.string(),
-	joined_at: z.string(),
-	updated_at: z.string(),
+	user: z.string().optional().default(''),
+	user_email: z.string().optional().default(''),
+	user_name: z.string().optional().default(''),
+	user_avatar_url: z.string().nullish().transform(v => v ?? undefined),
+	employee_id: z.string().optional().default(''),
+	role: z.string().nullish().transform(v => v ?? undefined),
+	role_name: z.string().nullish().transform(v => v ?? undefined),
+	branch: z.string().nullish().transform(v => v ?? undefined),
+	branch_name: z.string().nullish().transform(v => v ?? undefined),
+	branch_code: z.string().nullish().transform(v => v ?? undefined),
+	department: z.string().nullish().transform(v => v ?? undefined),
+	department_name: z.string().nullish().transform(v => v ?? undefined),
+	designation: z.string().nullish().transform(v => v ?? undefined),
+	designation_title: z.string().nullish().transform(v => v ?? undefined),
+	phone: z.string().nullish().transform(v => v ?? undefined),
+	employment_type: z.string().optional().default(''),
+	status: z.string().optional().default('active'),
+	joined_at: z.string().nullish().transform(v => v ?? ''),
 }).passthrough();
 
 export const AttendanceSchema = z.object({
