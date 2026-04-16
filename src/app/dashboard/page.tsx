@@ -54,6 +54,7 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { apiFetch } from '@/lib/api';
+import { Logo } from '@/components/ui/logo';
 import {
 	parseListResponse,
 	OrganizationSchema, MemberSchema, RoleSchema, BranchSchema, NotificationSchema,
@@ -407,10 +408,7 @@ export default function DashboardPage() {
 			<header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-lg">
 				<div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
 					<div className="flex items-center gap-3">
-						<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-							C
-						</div>
-						<span className="text-lg font-bold tracking-tight">CrewSynx</span>
+						<Logo size={32} nameClassName="hidden sm:inline" />
 						<span className="text-sm text-muted-foreground hidden sm:inline">/ Management</span>
 					</div>
 					<div className="flex items-center gap-2">

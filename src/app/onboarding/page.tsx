@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Building2, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
+import { LogoMark } from '@/components/ui/logo';
 
 export default function OnboardingPage() {
 	const [orgName, setOrgName] = useState('');
@@ -46,8 +47,8 @@ export default function OnboardingPage() {
 		<div className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
 			<div className="w-full max-w-md space-y-8">
 				<div className="text-center">
-					<div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-						<Building2 className="h-6 w-6 text-primary" />
+					<div className="mx-auto flex items-center justify-center">
+						<LogoMark size={56} />
 					</div>
 					<h2 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
 						Create an organization

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Logo } from '@/components/ui/logo';
 
 const footerLinks = {
 	Product: [
@@ -27,12 +28,7 @@ export function Footer() {
 				<div className="grid grid-cols-2 gap-8 md:grid-cols-4">
 					{/* Brand */}
 					<div className="col-span-2 md:col-span-1">
-						<Link href="/" className="flex items-center gap-2">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-								C
-							</div>
-							<span className="text-lg font-bold tracking-tight">CrewSynx</span>
-						</Link>
+						<Logo size={32} />
 						<p className="mt-4 text-sm text-muted-foreground leading-relaxed">
 							The all-in-one workspace for modern teams. Manage projects, track attendance, and collaborate seamlessly.
 						</p>

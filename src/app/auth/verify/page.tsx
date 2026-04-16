@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import VerifyForm from './verify-form';
+import { LogoMark } from '@/components/ui/logo';
 
 export const metadata: Metadata = {
-	title: 'Verify OTP | CrewSynx',
-	description: 'Enter the one-time password sent to your email to complete sign in.',
+  title: 'Verify OTP | CrewSynx',
+  description: 'Enter the one-time password sent to your email to complete sign in.',
 };
 
 export default function VerifyPage() {
@@ -12,16 +13,8 @@ export default function VerifyPage() {
     <div className="flex h-screen items-center justify-center px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <svg
-              className="h-8 w-8 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div className="mx-auto flex items-center justify-center">
+            <LogoMark size={56} />
           </div>
           <h2 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
             Verify your identity

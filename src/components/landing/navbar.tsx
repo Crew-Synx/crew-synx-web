@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import { Logo } from '@/components/ui/logo';
+import Link from 'next/link';
 
 const navLinks = [
 	{ label: 'Features', href: '#features' },
@@ -18,12 +19,7 @@ export function Navbar() {
 	return (
 		<header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
 			<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-				<Link href="/" className="flex items-center gap-2">
-					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-						C
-					</div>
-					<span className="text-lg font-bold tracking-tight">CrewSynx</span>
-				</Link>
+				<Logo size={32} />
 
 				{/* Desktop nav */}
 				<nav className="hidden items-center gap-8 md:flex">
