@@ -396,4 +396,3 @@ export default function OnboardEmployeePage() {
 		</Suspense>
 	);
 }
-const router = useRouter();
