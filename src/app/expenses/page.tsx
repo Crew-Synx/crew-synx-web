@@ -51,8 +51,9 @@ export default function ExpensesPage() {
 	const [creating, setCreating] = useState(false);
 	const [form, setForm] = useState({
 		title: '', description: '', expense_type: 'other',
-		amount: '', currency: 'INR', expense_date: '', vendor_name: '', receipt_number: '',
+		amount: '', currency: 'INR', expense_date: '', vendor_name: '',
 	});
+	const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
 	// Review dialog
 	const [reviewOpen, setReviewOpen] = useState(false);
@@ -98,8 +99,17 @@ export default function ExpensesPage() {
 				body: JSON.stringify(form),
 			});
 			if (res.ok) {
+				const created = await res.json().catch(() => null);
+				if (receiptFile && created?.data?.id) {
+					const fd = new FormData();
+					fd.append('receipt', receiptFile);
+					await apiFetch(`/organizations/${org.id}/payments/expenses/${created.data.id}/receipt/`, {
+						method: 'POST', orgId: org.id, body: fd,
+					});
+				}
 				setCreateOpen(false);
-				setForm({ title: '', description: '', expense_type: 'other', amount: '', currency: 'INR', expense_date: '', vendor_name: '', receipt_number: '' });
+				setForm({ title: '', description: '', expense_type: 'other', amount: '', currency: 'INR', expense_date: '', vendor_name: '' });
+				setReceiptFile(null);
 				loadClaims(org.id);
 			}
 		} finally {
@@ -215,15 +225,19 @@ export default function ExpensesPage() {
 										<Input value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} />
 									</div>
 								</div>
-								<div className="grid grid-cols-2 gap-4">
-									<div>
-										<Label>Vendor</Label>
-										<Input value={form.vendor_name} onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))} />
-									</div>
-									<div>
-										<Label>Receipt #</Label>
-										<Input value={form.receipt_number} onChange={e => setForm(f => ({ ...f, receipt_number: e.target.value }))} />
-									</div>
+								<div>
+									<Label>Vendor</Label>
+									<Input value={form.vendor_name} onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))} />
+								</div>
+								<div>
+									<Label>Receipt</Label>
+									<Input
+										type="file"
+										accept="image/jpeg,image/png,image/webp,application/pdf"
+										onChange={e => setReceiptFile(e.target.files?.[0] ?? null)}
+										className="cursor-pointer"
+									/>
+									<p className="text-xs text-muted-foreground mt-1">JPEG, PNG, WebP or PDF · max 10 MB</p>
 								</div>
 							</div>
 							<DialogFooter>
@@ -284,65 +298,65 @@ export default function ExpensesPage() {
 					<Card>
 						<CardContent className="p-0">
 							<div className="overflow-x-auto">
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead>Title</TableHead>
-										<TableHead>Employee</TableHead>
-										<TableHead>Type</TableHead>
-										<TableHead>Amount</TableHead>
-										<TableHead>Date</TableHead>
-										<TableHead>Status</TableHead>
-										<TableHead>Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{claims.map(claim => {
-										const sb = statusBadge[claim.status] || statusBadge.draft;
-										return (
-											<TableRow key={claim.id}>
-												<TableCell>
-													<div>
-														<p className="font-medium">{claim.title}</p>
-														{claim.vendor_name && (
-															<p className="text-xs text-muted-foreground">{claim.vendor_name}</p>
-														)}
-													</div>
-												</TableCell>
-												<TableCell className="text-sm">{claim.employee_name}</TableCell>
-												<TableCell className="text-sm capitalize">{claim.expense_type?.replace(/_/g, ' ') || '-'}</TableCell>
-												<TableCell className="font-mono">
-													{claim.currency} {parseFloat(claim.amount).toLocaleString()}
-												</TableCell>
-												<TableCell className="text-sm">{claim.expense_date || '-'}</TableCell>
-												<TableCell>
-													<Badge className={sb.color} variant="secondary">{sb.label}</Badge>
-												</TableCell>
-												<TableCell>
-													<div className="flex gap-1">
-														{(claim.status === 'submitted' || claim.status === 'under_review') && (
-															<Button
-																variant="ghost" size="sm"
-																onClick={() => { setReviewClaim(claim); setReviewOpen(true); }}
-															>
-																Review
-															</Button>
-														)}
-														{claim.status === 'approved' && (
-															<Button
-																variant="ghost" size="sm"
-																onClick={() => handleReimburse(claim.id)}
-															>
-																<DollarSign className="mr-1 h-3 w-3" />Reimburse
-															</Button>
-														)}
-													</div>
-												</TableCell>
-											</TableRow>
-										);
-									})}
-								</TableBody>
-							</Table>
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead>Title</TableHead>
+											<TableHead>Employee</TableHead>
+											<TableHead>Type</TableHead>
+											<TableHead>Amount</TableHead>
+											<TableHead>Date</TableHead>
+											<TableHead>Status</TableHead>
+											<TableHead>Actions</TableHead>
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{claims.map(claim => {
+											const sb = statusBadge[claim.status] || statusBadge.draft;
+											return (
+												<TableRow key={claim.id}>
+													<TableCell>
+														<div>
+															<p className="font-medium">{claim.title}</p>
+															{claim.vendor_name && (
+																<p className="text-xs text-muted-foreground">{claim.vendor_name}</p>
+															)}
+														</div>
+													</TableCell>
+													<TableCell className="text-sm">{claim.employee_name}</TableCell>
+													<TableCell className="text-sm capitalize">{claim.expense_type?.replace(/_/g, ' ') || '-'}</TableCell>
+													<TableCell className="font-mono">
+														{claim.currency} {parseFloat(claim.amount).toLocaleString()}
+													</TableCell>
+													<TableCell className="text-sm">{claim.expense_date || '-'}</TableCell>
+													<TableCell>
+														<Badge className={sb.color} variant="secondary">{sb.label}</Badge>
+													</TableCell>
+													<TableCell>
+														<div className="flex gap-1">
+															{(claim.status === 'submitted' || claim.status === 'under_review') && (
+																<Button
+																	variant="ghost" size="sm"
+																	onClick={() => { setReviewClaim(claim); setReviewOpen(true); }}
+																>
+																	Review
+																</Button>
+															)}
+															{claim.status === 'approved' && (
+																<Button
+																	variant="ghost" size="sm"
+																	onClick={() => handleReimburse(claim.id)}
+																>
+																	<DollarSign className="mr-1 h-3 w-3" />Reimburse
+																</Button>
+															)}
+														</div>
+													</TableCell>
+												</TableRow>
+											);
+										})}
+									</TableBody>
+								</Table>
 							</div>
 						</CardContent>
 					</Card>
