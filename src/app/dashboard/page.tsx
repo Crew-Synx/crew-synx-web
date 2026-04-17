@@ -80,7 +80,9 @@ interface Member {
 interface Role {
 	id: string;
 	name: string;
-	is_system: boolean;
+	priority: number;
+	is_system?: boolean;
+	permissions: string[];
 }
 
 interface NotificationItem {
