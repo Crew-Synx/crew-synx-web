@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
 	Loader2, ArrowLeft, Pencil, Save, X,
-	Phone, Mail, MapPin, Building2, Briefcase, CreditCard, Shield,
+	Phone, Briefcase, CreditCard, Shield, QrCode,
 } from 'lucide-react';
 import type { Employee, Organization } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
@@ -27,6 +27,7 @@ export default function EmployeeDetailPage() {
 	const router = useRouter();
 	const params = useParams();
 	const memberId = params.id as string;
+	const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
 	const [org, setOrg] = useState<Organization | null>(null);
 	const [employee, setEmployee] = useState<Employee | null>(null);
@@ -48,7 +49,8 @@ export default function EmployeeDetailPage() {
 			const res = await apiFetch(`/organizations/${orgId}/employees/${memberId}/`, { orgId });
 			if (res.ok) {
 				const data = await res.json().catch(() => ({ data: null }));
-				setEmployee(parseItemResponse(EmployeeSchema, data));
+				const emp = parseItemResponse(EmployeeSchema, data);
+				setEmployee(emp as unknown as Employee);
 			} else {
 				router.push('/employees');
 			}
@@ -56,6 +58,19 @@ export default function EmployeeDetailPage() {
 			setLoading(false);
 		}
 	}
+
+	// Render QR code onto the canvas when employee data loads
+	useEffect(() => {
+		const qrPayload = (employee as (Employee & { encrypted_qr_payload?: string }) | null)?.encrypted_qr_payload;
+		if (!qrCanvasRef.current || !qrPayload) return;
+		import('qrcode').then(QRCode => {
+			QRCode.toCanvas(qrCanvasRef.current!, qrPayload, {
+				width: 180,
+				margin: 2,
+				color: { dark: '#000000', light: '#ffffff' },
+			});
+		});
+	}, [employee]);
 
 	function startEdit() {
 		if (!employee) return;
@@ -160,8 +175,23 @@ export default function EmployeeDetailPage() {
 							<InfoRow label="Designation" value={employee.designation_title} />
 							<InfoRow label="Employment Type" value={employee.employment_type} />
 							<InfoRow label="Joining Date" value={employee.joining_date} />
-							<InfoRow label="Notice Period" value={employee.notice_period_days ? `${employee.notice_period_days} days` : undefined} />
-							<InfoRow label="Reporting Manager" value={employee.reporting_manager_name} />
+						</CardContent>
+					</Card>
+
+					{/* Employee QR Code */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-2">
+								<QrCode className="h-4 w-4" />Employee QR Code
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="flex flex-col items-center gap-3">
+							<canvas ref={qrCanvasRef} className="rounded-md border" />
+							<p className="text-xs text-muted-foreground text-center">
+								This QR is encrypted. Only an admin scanner can read the employee data —
+								regular QR scanners will see gibberish.
+							</p>
+							<p className="text-xs font-mono text-muted-foreground">{employee.employee_id}</p>
 						</CardContent>
 					</Card>
 

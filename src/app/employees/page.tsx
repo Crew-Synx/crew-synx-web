@@ -14,7 +14,15 @@ import {
 	Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-	Loader2, Plus, Search, ArrowLeft, Users, Pencil, Trash2,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+	Loader2, Plus, Search, ArrowLeft, Users, MoreVertical,
+	Eye, Pencil, Ban, Trash2,
 } from 'lucide-react';
 import {
 	AlertDialog,
@@ -50,6 +58,8 @@ export default function EmployeesPage() {
 	const [statusFilter, setStatusFilter] = useState('all');
 	const [deleteTarget, setDeleteTarget] = useState<MemberListItem | null>(null);
 	const [deleting, setDeleting] = useState(false);
+	const [disableTarget, setDisableTarget] = useState<MemberListItem | null>(null);
+	const [disabling, setDisabling] = useState(false);
 
 	useEffect(() => {
 		const o = getSelectedOrg();
@@ -118,6 +128,26 @@ export default function EmployeesPage() {
 		}
 	}
 
+	async function handleDisable() {
+		if (!org || !disableTarget) return;
+		setDisabling(true);
+		try {
+			const res = await apiFetch(`/organizations/${org.id}/employees/${disableTarget.id}/`, {
+				orgId: org.id,
+				method: 'PATCH',
+				body: JSON.stringify({ status: 'suspended' }),
+			});
+			if (res.ok) {
+				setEmployees(prev => prev.map(e =>
+					e.id === disableTarget.id ? { ...e, status: 'suspended' } : e
+				));
+			}
+		} finally {
+			setDisabling(false);
+			setDisableTarget(null);
+		}
+	}
+
 	if (loading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
@@ -126,11 +156,11 @@ export default function EmployeesPage() {
 		);
 	}
 
-	const statusColor: Record<string, string> = {
-		active: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-		suspended: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-		terminated: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-		on_notice: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+	const statusConfig: Record<string, { label: string; className: string }> = {
+		active: { label: 'Active', className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' },
+		suspended: { label: 'Suspended', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' },
+		terminated: { label: 'Terminated', className: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' },
+		on_notice: { label: 'On Notice', className: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300' },
 	};
 
 	return (
@@ -146,7 +176,7 @@ export default function EmployeesPage() {
 							<div>
 								<h1 className="text-2xl font-bold">Employees</h1>
 								<p className="text-sm text-muted-foreground">
-									{employees.length} employees in the organization
+									{employees.length} employee{employees.length !== 1 ? 's' : ''} in the organization
 								</p>
 							</div>
 						</div>
@@ -228,62 +258,74 @@ export default function EmployeesPage() {
 											<TableRow>
 												<TableHead>Employee ID</TableHead>
 												<TableHead>Name</TableHead>
-												<TableHead>Role</TableHead>
-												<TableHead>Branch</TableHead>
-												<TableHead>Department</TableHead>
+												<TableHead>Designation</TableHead>
 												<TableHead>Status</TableHead>
-												<TableHead className="w-20 text-right">Actions</TableHead>
+												<TableHead className="w-12" />
 											</TableRow>
 										</TableHeader>
 										<TableBody>
-											{employees.map(emp => (
-												<TableRow
-													key={emp.id}
-													className="cursor-pointer hover:bg-muted/50"
-													onClick={() => router.push(`/employees/${emp.id}`)}
-												>
-													<TableCell className="font-mono font-medium">
-														{emp.employee_id || '-'}
-													</TableCell>
-													<TableCell>
-														<div>
-															<p className="font-medium">{emp.user_name || '-'}</p>
-															<p className="text-xs text-muted-foreground">{emp.user_email || ''}</p>
-														</div>
-													</TableCell>
-													<TableCell>{emp.role_name || '-'}</TableCell>
-													<TableCell>{emp.branch_name || '-'}</TableCell>
-													<TableCell>{emp.department_name || '-'}</TableCell>
-													<TableCell>
-														<Badge className={statusColor[emp.status] || ''} variant="secondary">
-															{emp.status}
-														</Badge>
-													</TableCell>
-													<TableCell className="text-right">
-														<div
-															className="flex justify-end gap-1"
-															onClick={e => e.stopPropagation()}
-														>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8"
-																onClick={() => router.push(`/employees/${emp.id}/edit`)}
-															>
-																<Pencil className="h-4 w-4" />
-															</Button>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8 text-destructive hover:text-destructive"
-																onClick={() => setDeleteTarget(emp)}
-															>
-																<Trash2 className="h-4 w-4" />
-															</Button>
-														</div>
-													</TableCell>
-												</TableRow>
-											))}
+											{employees.map(emp => {
+												const sc = statusConfig[emp.status] ?? { label: emp.status, className: '' };
+												return (
+													<TableRow key={emp.id} className="hover:bg-muted/50">
+														<TableCell className="font-mono text-sm font-medium">
+															{emp.employee_id || <span className="text-muted-foreground text-xs">No ID</span>}
+														</TableCell>
+														<TableCell>
+															<div>
+																<p className="font-medium">{emp.user_name || <span className="text-muted-foreground">—</span>}</p>
+																<p className="text-xs text-muted-foreground">{emp.user_email || ''}</p>
+															</div>
+														</TableCell>
+														<TableCell>
+															<div>
+																<p className="text-sm">{emp.designation_title || emp.role_name || <span className="text-muted-foreground">—</span>}</p>
+																{emp.department_name && (
+																	<p className="text-xs text-muted-foreground">{emp.department_name}</p>
+																)}
+															</div>
+														</TableCell>
+														<TableCell>
+															<Badge className={sc.className} variant="secondary">
+																{sc.label}
+															</Badge>
+														</TableCell>
+														<TableCell onClick={e => e.stopPropagation()}>
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button variant="ghost" size="icon" className="h-8 w-8">
+																		<MoreVertical className="h-4 w-4" />
+																		<span className="sr-only">Actions</span>
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	<DropdownMenuItem onClick={() => router.push(`/employees/${emp.id}`)}>
+																		<Eye className="mr-2 h-4 w-4" />View
+																	</DropdownMenuItem>
+																	<DropdownMenuItem onClick={() => router.push(`/employees/${emp.id}/edit`)}>
+																		<Pencil className="mr-2 h-4 w-4" />Edit
+																	</DropdownMenuItem>
+																	{emp.status !== 'suspended' && (
+																		<DropdownMenuItem
+																			className="text-yellow-600 focus:text-yellow-600"
+																			onClick={() => setDisableTarget(emp)}
+																		>
+																			<Ban className="mr-2 h-4 w-4" />Disable
+																		</DropdownMenuItem>
+																	)}
+																	<DropdownMenuSeparator />
+																	<DropdownMenuItem
+																		className="text-destructive focus:text-destructive"
+																		onClick={() => setDeleteTarget(emp)}
+																	>
+																		<Trash2 className="mr-2 h-4 w-4" />Delete
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</TableCell>
+													</TableRow>
+												);
+											})}
 										</TableBody>
 									</Table>
 								</div>
@@ -293,12 +335,13 @@ export default function EmployeesPage() {
 				</div>
 			</div>
 
+			{/* Delete confirmation */}
 			<AlertDialog open={!!deleteTarget} onOpenChange={(open: boolean) => { if (!open) setDeleteTarget(null); }}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Remove Employee</AlertDialogTitle>
 						<AlertDialogDescription>
-							Are you sure you want to remove <strong>{deleteTarget?.user_name}</strong> from the organization? This action cannot be undone.
+							Are you sure you want to permanently remove <strong>{deleteTarget?.user_name}</strong>? This action cannot be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -310,6 +353,29 @@ export default function EmployeesPage() {
 						>
 							{deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
 							Remove
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Disable confirmation */}
+			<AlertDialog open={!!disableTarget} onOpenChange={(open: boolean) => { if (!open) setDisableTarget(null); }}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Disable Employee</AlertDialogTitle>
+						<AlertDialogDescription>
+							Disable <strong>{disableTarget?.user_name}</strong>? Their account will be suspended. You can re-enable them later from their profile.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={disabling}>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleDisable}
+							disabled={disabling}
+							className="bg-yellow-600 text-white hover:bg-yellow-700"
+						>
+							{disabling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+							Disable
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
