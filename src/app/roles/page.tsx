@@ -7,17 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter,
 	DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-	Loader2, Plus, Layers, Trash2, ArrowLeft, Users,
-} from 'lucide-react';
-import type { Department, Organization } from '@/lib/types';
+import { Loader2, Plus, Shield, Trash2, ArrowLeft } from 'lucide-react';
+import type { Organization, Role } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
-import { parseListResponse, DepartmentSchema } from '@/lib/schemas';
+import { parseListResponse, RoleSchema } from '@/lib/schemas';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -25,33 +22,34 @@ function getSelectedOrg(): Organization | null {
 	return stored ? JSON.parse(stored) : null;
 }
 
-function DepartmentsInner() {
+function RolesInner() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const returnUrl = searchParams.get('return');
+
 	const [org, setOrg] = useState<Organization | null>(null);
-	const [departments, setDepartments] = useState<Department[]>([]);
+	const [roles, setRoles] = useState<Role[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	const [createOpen, setCreateOpen] = useState(false);
 	const [creating, setCreating] = useState(false);
-	const [form, setForm] = useState({ name: '', code: '' });
+	const [form, setForm] = useState({ name: '' });
 
 	useEffect(() => {
 		const o = getSelectedOrg();
 		if (!o) { router.push('/dashboard'); return; }
 		setOrg(o);
-		loadDepartments(o.id);
+		loadRoles(o.id);
 		if (returnUrl) setCreateOpen(true);
 	}, [router, returnUrl]);
 
-	async function loadDepartments(orgId: string) {
+	async function loadRoles(orgId: string) {
 		setLoading(true);
 		try {
-			const res = await apiFetch(`/organizations/${orgId}/departments/`, { orgId });
+			const res = await apiFetch(`/roles/`, { orgId });
 			if (res.ok) {
 				const data = await res.json().catch(() => ({ data: [] }));
-				setDepartments(parseListResponse(DepartmentSchema, data));
+				setRoles(parseListResponse(RoleSchema, data));
 			}
 		} finally {
 			setLoading(false);
@@ -59,22 +57,23 @@ function DepartmentsInner() {
 	}
 
 	async function handleCreate() {
-		if (!org || !form.name) return;
+		if (!org || !form.name.trim()) return;
 		setCreating(true);
 		try {
-			const res = await apiFetch(`/organizations/${org.id}/departments/`, {
-				method: 'POST', orgId: org.id,
+			const res = await apiFetch(`/roles/`, {
+				method: 'POST',
+				orgId: org.id,
 				body: JSON.stringify(form),
 			});
 			if (res.ok) {
 				const json = await res.json().catch(() => ({}));
 				const created = json.data || json;
 				setCreateOpen(false);
-				setForm({ name: '', code: '' });
+				setForm({ name: '' });
 				if (returnUrl) {
-					router.push(`${returnUrl}?reload=department&newId=${created.id}`);
+					router.push(`${returnUrl}?reload=role&newId=${created.id}`);
 				} else {
-					loadDepartments(org.id);
+					loadRoles(org.id);
 				}
 			}
 		} finally {
@@ -82,12 +81,10 @@ function DepartmentsInner() {
 		}
 	}
 
-	async function handleDelete(deptId: string) {
-		if (!org || !confirm('Delete this department?')) return;
-		await apiFetch(`/organizations/${org.id}/departments/${deptId}/`, {
-			method: 'DELETE', orgId: org.id,
-		});
-		loadDepartments(org.id);
+	async function handleDelete(roleId: string) {
+		if (!org || !confirm('Delete this role?')) return;
+		await apiFetch(`/roles/${roleId}/`, { method: 'DELETE', orgId: org.id });
+		loadRoles(org.id);
 	}
 
 	if (loading) {
@@ -107,76 +104,66 @@ function DepartmentsInner() {
 							<Link href={returnUrl ?? '/dashboard'}><ArrowLeft className="h-4 w-4" /></Link>
 						</Button>
 						<div>
-							<h1 className="text-2xl font-bold">Departments</h1>
-							<p className="text-sm text-muted-foreground">
-								Manage organizational departments
-							</p>
+							<h1 className="text-2xl font-bold">Roles</h1>
+							<p className="text-sm text-muted-foreground">Manage employee roles in your organization</p>
 						</div>
 					</div>
 					<Dialog open={createOpen} onOpenChange={setCreateOpen}>
 						<DialogTrigger asChild>
-							<Button><Plus className="mr-2 h-4 w-4" />Add Department</Button>
+							<Button><Plus className="mr-2 h-4 w-4" />Add Role</Button>
 						</DialogTrigger>
-						<DialogContent className="max-h-[90vh] overflow-y-auto">
+						<DialogContent className="max-w-sm">
 							<DialogHeader>
-								<DialogTitle>Create Department</DialogTitle>
-								<DialogDescription>
-									Add a new department to the organization.
-								</DialogDescription>
+								<DialogTitle>Create New Role</DialogTitle>
+								<DialogDescription>Add a new role for employees in your organization.</DialogDescription>
 							</DialogHeader>
 							<div className="grid gap-4 py-4">
 								<div>
-									<Label>Department Name *</Label>
-									<Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Engineering" />
-								</div>
-								<div>
-									<Label>Code</Label>
-									<Input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="e.g. ENG" maxLength={10} />
+									<Label>Role Name *</Label>
+									<Input
+										value={form.name}
+										onChange={e => setForm({ name: e.target.value })}
+										placeholder="e.g. Team Lead"
+										autoFocus
+										onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
+									/>
 								</div>
 							</div>
 							<DialogFooter>
 								<Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-								<Button onClick={handleCreate} disabled={creating || !form.name}>
+								<Button onClick={handleCreate} disabled={creating || !form.name.trim()}>
 									{creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-									Create
+									Create Role
 								</Button>
 							</DialogFooter>
 						</DialogContent>
 					</Dialog>
 				</div>
 
-				{departments.length === 0 ? (
+				{roles.length === 0 ? (
 					<Card>
 						<CardContent className="flex flex-col items-center justify-center py-12 text-center">
-							<Layers className="h-12 w-12 text-muted-foreground mb-4" />
-							<h3 className="font-semibold text-lg">No departments yet</h3>
-							<p className="text-sm text-muted-foreground mt-1">Create departments to organize your employees.</p>
+							<Shield className="h-12 w-12 text-muted-foreground mb-4" />
+							<h3 className="font-semibold text-lg">No roles yet</h3>
+							<p className="text-sm text-muted-foreground mt-1">
+								Create roles to assign to employees.
+							</p>
 						</CardContent>
 					</Card>
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-						{departments.map(dept => (
-							<Card key={dept.id}>
+						{roles.map(role => (
+							<Card key={role.id}>
 								<CardHeader className="pb-2">
 									<div className="flex items-start justify-between">
-										<div>
-											<CardTitle className="text-lg">{dept.name}</CardTitle>
-											{dept.code && <Badge variant="secondary" className="mt-1 font-mono">{dept.code}</Badge>}
-										</div>
-										<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(dept.id)}>
+										<CardTitle className="text-lg">{role.name}</CardTitle>
+										<Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(role.id)}>
 											<Trash2 className="h-4 w-4 text-destructive" />
 										</Button>
 									</div>
 								</CardHeader>
-								<CardContent className="space-y-2 text-sm">
-									{dept.head_name && (
-										<p className="text-muted-foreground">Head: {dept.head_name}</p>
-									)}
-									<div className="flex items-center gap-2 text-muted-foreground">
-										<Users className="h-3.5 w-3.5" />
-										{dept.employee_count} employees
-									</div>
-									{!dept.is_active && <Badge variant="destructive">Inactive</Badge>}
+								<CardContent className="text-sm text-muted-foreground">
+									Priority: {role.priority}
 								</CardContent>
 							</Card>
 						))}
@@ -187,14 +174,14 @@ function DepartmentsInner() {
 	);
 }
 
-export default function DepartmentsPage() {
+export default function RolesPage() {
 	return (
 		<Suspense fallback={
 			<div className="flex min-h-screen items-center justify-center">
 				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 			</div>
 		}>
-			<DepartmentsInner />
+			<RolesInner />
 		</Suspense>
 	);
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,8 +26,10 @@ function getSelectedOrg(): Organization | null {
 	return stored ? JSON.parse(stored) : null;
 }
 
-export default function BranchesPage() {
+function BranchesInner() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const returnUrl = searchParams.get('return');
 	const [org, setOrg] = useState<Organization | null>(null);
 	const [branches, setBranches] = useState<Branch[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -45,7 +47,8 @@ export default function BranchesPage() {
 		if (!o) { router.push('/dashboard'); return; }
 		setOrg(o);
 		loadBranches(o.id);
-	}, [router]);
+		if (returnUrl) setCreateOpen(true);
+	}, [router, returnUrl]);
 
 	async function loadBranches(orgId: string) {
 		setLoading(true);
@@ -70,9 +73,15 @@ export default function BranchesPage() {
 				body: JSON.stringify(form),
 			});
 			if (res.ok) {
+				const json = await res.json().catch(() => ({}));
+				const created = json.data || json;
 				setCreateOpen(false);
 				setForm({ name: '', code: '', city: '', state: '', country: '', phone: '', email: '', is_head_office: false });
-				loadBranches(org.id);
+				if (returnUrl) {
+					router.push(`${returnUrl}?reload=branch&newId=${created.id}`);
+				} else {
+					loadBranches(org.id);
+				}
 			}
 		} finally {
 			setCreating(false);
@@ -102,7 +111,7 @@ export default function BranchesPage() {
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<Button variant="ghost" size="icon" asChild>
-							<Link href="/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
+							<Link href={returnUrl ?? '/dashboard'}><ArrowLeft className="h-4 w-4" /></Link>
 						</Button>
 						<div>
 							<h1 className="text-2xl font-bold">Branches</h1>
@@ -228,5 +237,17 @@ export default function BranchesPage() {
 				)}
 			</div>
 		</div>
+	);
+}
+
+export default function BranchesPage() {
+	return (
+		<Suspense fallback={
+			<div className="flex min-h-screen items-center justify-center">
+				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		}>
+			<BranchesInner />
+		</Suspense>
 	);
 }

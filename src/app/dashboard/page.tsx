@@ -17,15 +17,6 @@ import {
 	SelectValue,
 } from '@/components/ui/select';
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from '@/components/ui/dialog';
-import {
 	Loader2,
 	Users,
 	Settings,
@@ -35,10 +26,8 @@ import {
 	UserPlus,
 	Trash2,
 	Shield,
-	Mail,
 	Crown,
 	MoreHorizontal,
-	Copy,
 	Check,
 	Bell,
 	Briefcase,
@@ -70,7 +59,6 @@ interface Organization {
 	id: string;
 	name: string;
 	slug: string;
-	invite_code?: string;
 	avatar_url?: string | null;
 }
 
@@ -115,19 +103,10 @@ export default function DashboardPage() {
 	const [loading, setLoading] = useState(true);
 	const [membersLoading, setMembersLoading] = useState(false);
 
-	// Invite dialog
-	const [inviteOpen, setInviteOpen] = useState(false);
-	const [inviteEmail, setInviteEmail] = useState('');
-	const [inviteRole, setInviteRole] = useState('');
-	const [inviting, setInviting] = useState(false);
-
 	// Org settings
 	const [orgName, setOrgName] = useState('');
 	const [savingOrg, setSavingOrg] = useState(false);
 	const [orgSaved, setOrgSaved] = useState(false);
-
-	// Copy invite code
-	const [copied, setCopied] = useState(false);
 
 	// Notifications
 	const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -136,7 +115,6 @@ export default function DashboardPage() {
 
 	// Error states
 	const [actionError, setActionError] = useState<string | null>(null);
-	const [inviteError, setInviteError] = useState<string | null>(null);
 	const [roleUpdating, setRoleUpdating] = useState<string | null>(null); // memberId being updated
 
 	const router = useRouter();
@@ -279,33 +257,6 @@ export default function DashboardPage() {
 		router.push('/auth/login');
 	};
 
-	const handleInviteMember = async () => {
-		if (!selectedOrg || !inviteEmail) return;
-		setInviteError(null);
-		setInviting(true);
-		try {
-			const res = await apiFetch(`/organizations/${selectedOrg.id}/members/`, {
-				method: 'POST',
-				orgId: selectedOrg.id,
-				body: JSON.stringify({ email: inviteEmail, role_id: inviteRole || undefined }),
-			});
-
-			if (res.ok) {
-				setInviteEmail('');
-				setInviteRole('');
-				setInviteOpen(false);
-				fetchMembers(selectedOrg.id);
-			} else {
-				const data = await res.json().catch(() => ({}));
-				setInviteError(data?.error ?? data?.detail ?? 'Failed to invite member');
-			}
-		} catch (err: unknown) {
-			setInviteError(err instanceof Error ? err.message : 'Failed to invite member');
-		} finally {
-			setInviting(false);
-		}
-	};
-
 	const handleRemoveMember = async (memberId: string) => {
 		if (!selectedOrg) return;
 		setActionError(null);
@@ -368,13 +319,6 @@ export default function DashboardPage() {
 		} finally {
 			setSavingOrg(false);
 		}
-	};
-
-	const handleCopyInviteCode = () => {
-		if (!selectedOrg?.invite_code) return;
-		navigator.clipboard.writeText(selectedOrg.invite_code);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
 	};
 
 	if (loading) {
@@ -623,23 +567,6 @@ export default function DashboardPage() {
 											<p className="text-sm text-destructive mt-1">{actionError}</p>
 										)}
 
-										{selectedOrg.invite_code && (
-											<>
-												<Separator />
-												<div className="space-y-2">
-													<Label className="text-xs text-muted-foreground">Invite Code</Label>
-													<div className="flex items-center gap-2">
-														<code className="flex-1 rounded bg-muted px-3 py-2 text-xs font-mono truncate">
-															{selectedOrg.invite_code}
-														</code>
-														<Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleCopyInviteCode}>
-															{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-														</Button>
-													</div>
-												</div>
-											</>
-										)}
-
 										<Separator />
 										<div className="text-xs text-muted-foreground">
 											<span className="font-medium">Slug:</span> {selectedOrg.slug}
@@ -662,72 +589,12 @@ export default function DashboardPage() {
 													{members.length} member{members.length !== 1 ? 's' : ''}
 												</CardDescription>
 											</div>
-											<Dialog open={inviteOpen} onOpenChange={(open) => { setInviteOpen(open); if (!open) setInviteError(null); }}>
-												<DialogTrigger asChild>
-													<Button size="sm">
-														<UserPlus className="mr-2 h-4 w-4" />
-														Invite
-													</Button>
-												</DialogTrigger>
-												<DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-													<DialogHeader>
-														<DialogTitle>Invite a team member</DialogTitle>
-														<DialogDescription>
-															Send an invitation to join this organization.
-														</DialogDescription>
-													</DialogHeader>
-													<div className="space-y-4 py-2">
-														<div className="space-y-2">
-															<Label htmlFor="invite-email">Email address</Label>
-															<Input
-																id="invite-email"
-																type="email"
-																placeholder="colleague@company.com"
-																value={inviteEmail}
-																onChange={(e) => setInviteEmail(e.target.value)}
-															/>
-														</div>
-														{roles.length > 0 && (
-															<div className="space-y-2">
-																<Label>Role</Label>
-																<Select value={inviteRole} onValueChange={setInviteRole}>
-																	<SelectTrigger>
-																		<SelectValue placeholder="Select a role" />
-																	</SelectTrigger>
-																	<SelectContent>
-																		{roles.filter((r) => r.name?.toLowerCase() !== 'owner').map((role) => (
-																			<SelectItem key={role.id} value={role.id}>
-																				{role.name}
-																			</SelectItem>
-																		))}
-																	</SelectContent>
-																</Select>
-															</div>
-														)}
-													</div>
-													<DialogFooter>
-														{inviteError && (
-															<p className="text-sm text-destructive w-full">{inviteError}</p>
-														)}
-														<Button variant="outline" onClick={() => setInviteOpen(false)}>
-															Cancel
-														</Button>
-														<Button onClick={handleInviteMember} disabled={inviting || !inviteEmail}>
-															{inviting ? (
-																<>
-																	<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-																	Inviting...
-																</>
-															) : (
-																<>
-																	<Mail className="mr-2 h-4 w-4" />
-																	Send Invite
-																</>
-															)}
-														</Button>
-													</DialogFooter>
-												</DialogContent>
-											</Dialog>
+											<Button size="sm" asChild>
+												<Link href="/employees/new">
+													<UserPlus className="mr-2 h-4 w-4" />
+													Add Employee
+												</Link>
+											</Button>
 										</div>
 									</CardHeader>
 									<CardContent>
@@ -739,7 +606,7 @@ export default function DashboardPage() {
 											<div className="flex flex-col items-center justify-center py-12 text-center">
 												<Users className="h-10 w-10 text-muted-foreground/40" />
 												<p className="mt-3 text-sm text-muted-foreground">
-													No members found. Invite someone to get started.
+													No members yet. Add employees to your organization to start collaborating.
 												</p>
 											</div>
 										) : (

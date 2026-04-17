@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,13 +9,12 @@ import { Label } from '@/components/ui/label';
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import {
-	Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from '@/components/ui/dialog';
 import { Loader2, ArrowLeft, Plus, Check } from 'lucide-react';
 import type { Organization, Branch, Department, Designation, Role } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
 import { parseListResponse, BranchSchema, DepartmentSchema, DesignationSchema, RoleSchema } from '@/lib/schemas';
+
+const SESSION_KEY = 'emp_new_form';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -31,8 +30,9 @@ const EMPLOYMENT_TYPES = [
 	{ value: 'freelance', label: 'Freelance' },
 ];
 
-export default function OnboardEmployeePage() {
+function OnboardEmployeeInner() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [org, setOrg] = useState<Organization | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [submitting, setSubmitting] = useState(false);
@@ -44,49 +44,6 @@ export default function OnboardEmployeePage() {
 	const [designations, setDesignations] = useState<Designation[]>([]);
 	const [roles, setRoles] = useState<Role[]>([]);
 
-	const [modal, setModal] = useState<'role' | 'branch' | 'department' | 'designation' | null>(null);
-	const [modalSubmitting, setModalSubmitting] = useState(false);
-	const [modalError, setModalError] = useState('');
-	const [modalForm, setModalForm] = useState<Record<string, string>>({});
-
-	const openModal = (type: typeof modal) => {
-		setModal(type);
-		setModalForm({});
-		setModalError('');
-	};
-
-	async function handleModalCreate() {
-		if (!org || !modal) return;
-		setModalSubmitting(true);
-		setModalError('');
-		try {
-			let url = '';
-			let body: Record<string, unknown> = {};
-			switch (modal) {
-				case 'role': url = `/roles/`; body = { name: modalForm.name }; break;
-				case 'branch': url = `/organizations/${org.id}/branches/`; body = { name: modalForm.name, code: modalForm.code?.toUpperCase() }; break;
-				case 'department': url = `/organizations/${org.id}/departments/`; body = { name: modalForm.name }; break;
-				case 'designation': url = `/organizations/${org.id}/designations/`; body = { title: modalForm.title }; break;
-			}
-			const res = await apiFetch(url, { method: 'POST', orgId: org.id, body: JSON.stringify(body) });
-			const json = await res.json().catch(() => ({}));
-			if (res.ok) {
-				const created = json.data || json;
-				switch (modal) {
-					case 'role': setRoles(prev => [...prev, created]); set('role', created.id); break;
-					case 'branch': setBranches(prev => [...prev, created]); set('branch', created.id); break;
-					case 'department': setDepartments(prev => [...prev, created]); set('department', created.id); break;
-					case 'designation': setDesignations(prev => [...prev, created]); set('designation', created.id); break;
-				}
-				setModal(null);
-			} else {
-				setModalError(json.error || json.message || json.detail || JSON.stringify(json.errors || json));
-			}
-		} finally {
-			setModalSubmitting(false);
-		}
-	}
-
 	const [form, setForm] = useState({
 		email: '', first_name: '', last_name: '',
 		role: '', branch: '', department: '', designation: '',
@@ -95,14 +52,41 @@ export default function OnboardEmployeePage() {
 
 	const set = (key: string, value: string) => setForm(f => ({ ...f, [key]: value }));
 
+	// Save form to sessionStorage before navigating to a create page
+	function navigateToCreate(path: string) {
+		sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...form, _step: step }));
+		router.push(`${path}?return=${encodeURIComponent('/employees/new')}`);
+	}
+
 	useEffect(() => {
 		const o = getSelectedOrg();
 		if (!o) { router.push('/dashboard'); return; }
 		setOrg(o);
-		loadLookups(o.id);
-	}, [router]);
 
-	async function loadLookups(orgId: string) {
+		const reloadType = searchParams.get('reload');
+		const newId = searchParams.get('newId');
+
+		// Restore saved form state (user returned from a create page)
+		const savedRaw = sessionStorage.getItem(SESSION_KEY);
+		if (savedRaw) {
+			try {
+				const saved = JSON.parse(savedRaw);
+				const { _step, ...savedForm } = saved;
+				setForm(f => ({ ...f, ...savedForm }));
+				setStep(typeof _step === 'number' ? _step : 0);
+			} catch { /* ignore */ }
+			sessionStorage.removeItem(SESSION_KEY);
+		}
+
+		loadLookups(o.id, reloadType ?? undefined, newId ?? undefined);
+
+		// Clean up URL params
+		if (reloadType) {
+			router.replace('/employees/new');
+		}
+	}, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	async function loadLookups(orgId: string, reloadType?: string, newId?: string) {
 		setLoading(true);
 		try {
 			const [brRes, deptRes, desRes, roleRes] = await Promise.all([
@@ -115,6 +99,11 @@ export default function OnboardEmployeePage() {
 			if (deptRes.ok) setDepartments(parseListResponse(DepartmentSchema, await deptRes.json().catch(() => ({ data: [] }))));
 			if (desRes.ok) setDesignations(parseListResponse(DesignationSchema, await desRes.json().catch(() => ({ data: [] }))));
 			if (roleRes.ok) setRoles(parseListResponse(RoleSchema, await roleRes.json().catch(() => ({ data: [] }))));
+
+			// Auto-select the newly created item
+			if (reloadType && newId) {
+				setForm(f => ({ ...f, [reloadType]: newId }));
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -186,13 +175,12 @@ export default function OnboardEmployeePage() {
 					{steps.map((label, i) => (
 						<div key={i} className="flex items-center gap-3">
 							<div className="flex items-center gap-2">
-								<div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-									i < step
+								<div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${i < step
 										? 'bg-primary text-primary-foreground'
 										: i === step
 											? 'border-2 border-primary text-primary'
 											: 'border border-muted-foreground/30 text-muted-foreground'
-								}`}>
+									}`}>
 									{i < step ? <Check className="h-3 w-3" /> : i + 1}
 								</div>
 								<span className={`text-sm font-medium ${i <= step ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -266,7 +254,7 @@ export default function OnboardEmployeePage() {
 								<Label className="text-sm font-medium">Role *</Label>
 								<button
 									type="button"
-									onClick={() => openModal('role')}
+									onClick={() => navigateToCreate('/roles')}
 									className="flex items-center gap-0.5 text-xs text-primary hover:underline"
 								>
 									<Plus className="h-3 w-3" /> New
@@ -286,7 +274,7 @@ export default function OnboardEmployeePage() {
 								<Label className="text-sm font-medium">Branch *</Label>
 								<button
 									type="button"
-									onClick={() => openModal('branch')}
+									onClick={() => navigateToCreate('/branches')}
 									className="flex items-center gap-0.5 text-xs text-primary hover:underline"
 								>
 									<Plus className="h-3 w-3" /> New
@@ -308,7 +296,7 @@ export default function OnboardEmployeePage() {
 									<Label className="text-sm font-medium text-muted-foreground">Department</Label>
 									<button
 										type="button"
-										onClick={() => openModal('department')}
+										onClick={() => navigateToCreate('/departments')}
 										className="flex items-center gap-0.5 text-xs text-primary hover:underline"
 									>
 										<Plus className="h-3 w-3" />
@@ -326,7 +314,7 @@ export default function OnboardEmployeePage() {
 									<Label className="text-sm font-medium text-muted-foreground">Designation</Label>
 									<button
 										type="button"
-										onClick={() => openModal('designation')}
+										onClick={() => navigateToCreate('/designations')}
 										className="flex items-center gap-0.5 text-xs text-primary hover:underline"
 									>
 										<Plus className="h-3 w-3" />
@@ -350,11 +338,10 @@ export default function OnboardEmployeePage() {
 										key={t.value}
 										type="button"
 										onClick={() => set('employment_type', t.value)}
-										className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-											form.employment_type === t.value
+										className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${form.employment_type === t.value
 												? 'bg-primary text-primary-foreground border-primary'
 												: 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
-										}`}
+											}`}
 									>
 										{t.label}
 									</button>
@@ -393,94 +380,20 @@ export default function OnboardEmployeePage() {
 					</div>
 				)}
 
-				{/* Create entity modal */}
-				<Dialog open={modal !== null} onOpenChange={open => { if (!open) setModal(null); }}>
-					<DialogContent className="max-w-sm">
-						<DialogHeader>
-							<DialogTitle>
-								{modal === 'role' && 'New Role'}
-								{modal === 'branch' && 'New Branch'}
-								{modal === 'department' && 'New Department'}
-								{modal === 'designation' && 'New Designation'}
-							</DialogTitle>
-						</DialogHeader>
-
-						{modalError && (
-							<p className="text-sm text-destructive">{modalError}</p>
-						)}
-
-						<div className="space-y-3">
-							{(modal === 'role' || modal === 'department') && (
-								<div>
-									<Label>Name *</Label>
-									<Input
-										className="mt-1.5"
-										value={modalForm.name || ''}
-										onChange={e => setModalForm(f => ({ ...f, name: e.target.value }))}
-										placeholder={modal === 'role' ? 'e.g. Team Lead' : 'e.g. Engineering'}
-										autoFocus
-									/>
-								</div>
-							)}
-							{modal === 'branch' && (
-								<>
-									<div>
-										<Label>Name *</Label>
-										<Input
-											className="mt-1.5"
-											value={modalForm.name || ''}
-											onChange={e => setModalForm(f => ({ ...f, name: e.target.value }))}
-											placeholder="e.g. Hyderabad Office"
-											autoFocus
-										/>
-									</div>
-									<div>
-										<Label>Code *</Label>
-										<Input
-											className="mt-1.5"
-											value={modalForm.code || ''}
-											onChange={e => setModalForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
-											placeholder="e.g. HYD"
-											maxLength={10}
-										/>
-										<p className="text-xs text-muted-foreground mt-1">Short code used in employee IDs</p>
-									</div>
-								</>
-							)}
-							{modal === 'designation' && (
-								<div>
-									<Label>Title *</Label>
-									<Input
-										className="mt-1.5"
-										value={modalForm.title || ''}
-										onChange={e => setModalForm(f => ({ ...f, title: e.target.value }))}
-										placeholder="e.g. Senior Engineer"
-										autoFocus
-									/>
-								</div>
-							)}
-						</div>
-
-						<DialogFooter>
-							<Button variant="outline" onClick={() => setModal(null)}>Cancel</Button>
-							<Button
-								onClick={handleModalCreate}
-								disabled={
-									modalSubmitting ||
-									(modal === 'role' && !modalForm.name?.trim()) ||
-									(modal === 'branch' && (!modalForm.name?.trim() || !modalForm.code?.trim())) ||
-									(modal === 'department' && !modalForm.name?.trim()) ||
-									(modal === 'designation' && !modalForm.title?.trim())
-								}
-							>
-								{modalSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-								Create
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
-
 			</div>
 		</div>
 	);
 }
+
+export default function OnboardEmployeePage() {
+	return (
+		<Suspense fallback={
+			<div className="flex min-h-screen items-center justify-center">
+				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+			</div>
+		}>
+			<OnboardEmployeeInner />
+		</Suspense>
+	);
+}
+const router = useRouter();
