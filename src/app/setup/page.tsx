@@ -13,10 +13,9 @@ import {
 } from '@/components/ui/select';
 import {
 	Loader2, Shield, Building2, Layers, Briefcase,
-	Plus, Trash2, Check, ChevronRight, ChevronDown, ArrowRight, Rocket, Copy,
+	Plus, Trash2, Check, ArrowRight, Rocket, Copy,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
-import { groupPermissions, type Permission } from '@/lib/types';
 
 /* ─── Types ──────────────────────────────────────────────────────── */
 
@@ -224,44 +223,39 @@ export default function SetupPage() {
 
 	return (
 		<div className="min-h-screen bg-background">
-			<div className="mx-auto max-w-4xl p-6 space-y-8">
+			<div className="mx-auto max-w-2xl px-5 py-10 space-y-8">
 				{/* Header */}
-				<div className="text-center space-y-2">
-					<h1 className="text-3xl font-bold">Set up {org.name}</h1>
-					<p className="text-muted-foreground">
-						Configure your organization before adding employees
-					</p>
+				<div className="space-y-1">
+					<h1 className="text-2xl font-semibold tracking-tight">Set up {org.name}</h1>
+					<p className="text-sm text-muted-foreground">Configure your workspace — takes about 2 minutes</p>
 				</div>
 
-				{/* Step indicator */}
-				<div className="flex items-center justify-center gap-2">
+				{/* Step indicator — simple numbered dots */}
+				<div className="flex items-center gap-3">
 					{STEPS.map((s, i) => {
-						const Icon = s.icon;
 						const done = i < currentStep;
 						const active = i === currentStep;
 						return (
-							<div key={s.key} className="flex items-center gap-2">
+							<div key={s.key} className="flex items-center gap-3">
 								<button
 									onClick={() => setCurrentStep(i)}
-									className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${active
-										? 'bg-primary text-primary-foreground'
-										: done
-											? 'bg-primary/10 text-primary'
-											: 'bg-muted text-muted-foreground'
-										}`}
+									className="flex items-center gap-2 group"
 								>
-									{done ? (
-										<Check className="h-4 w-4" />
-									) : (
-										<Icon className="h-4 w-4" />
-									)}
-									<span className="hidden sm:inline">{s.label}</span>
-									{s.optional && (
-										<span className="hidden sm:inline text-xs opacity-60">(optional)</span>
-									)}
+									<div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${done
+										? 'bg-primary text-primary-foreground'
+										: active
+											? 'border-2 border-primary text-primary'
+											: 'border border-muted-foreground/30 text-muted-foreground'
+										}`}>
+										{done ? <Check className="h-3 w-3" /> : i + 1}
+									</div>
+									<span className={`text-sm font-medium hidden sm:inline ${active ? 'text-foreground' : 'text-muted-foreground'}`}>
+										{s.label}
+										{s.optional && <span className="ml-1 text-xs opacity-50">optional</span>}
+									</span>
 								</button>
 								{i < STEPS.length - 1 && (
-									<ChevronRight className="h-4 w-4 text-muted-foreground" />
+									<div className={`h-px w-6 transition-colors ${done ? 'bg-primary' : 'bg-border'}`} />
 								)}
 							</div>
 						);
@@ -352,54 +346,7 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 	const [creating, setCreating] = useState(false);
 	const [newRole, setNewRole] = useState('');
 	const [saving, setSaving] = useState(false);
-	const [expandedRoleId, setExpandedRoleId] = useState<string | null>(null);
-	const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
-	const [pendingPerms, setPendingPerms] = useState<Record<string, Set<string>>>({});
-	const [savingPermsFor, setSavingPermsFor] = useState<string | null>(null);
 	const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
-
-	useEffect(() => {
-		apiFetch('/roles/permissions/', { orgId }).then(async r => {
-			if (r.ok) {
-				const d = await r.json().catch(() => ({}));
-				setAllPermissions(d.data || []);
-			}
-		});
-	}, [orgId]);
-
-	const handleToggleExpand = (role: RoleItem) => {
-		if (role.name === 'Owner') return;
-		if (expandedRoleId === role.id) {
-			setExpandedRoleId(null);
-		} else {
-			setExpandedRoleId(role.id);
-			if (!pendingPerms[role.id]) {
-				setPendingPerms(prev => ({ ...prev, [role.id]: new Set(role.permissions ?? []) }));
-			}
-		}
-	};
-
-	const togglePerm = (roleId: string, permKey: string) => {
-		setPendingPerms(prev => {
-			const current = new Set(prev[roleId] ?? []);
-			if (current.has(permKey)) current.delete(permKey); else current.add(permKey);
-			return { ...prev, [roleId]: current };
-		});
-	};
-
-	const handleSavePerms = async (roleId: string) => {
-		setSavingPermsFor(roleId);
-		try {
-			const perms = Array.from(pendingPerms[roleId] ?? []);
-			const res = await apiFetch(`/roles/${roleId}/`, {
-				method: 'PATCH', orgId,
-				body: JSON.stringify({ permissions: perms }),
-			});
-			if (res.ok) { onReload(); setExpandedRoleId(null); }
-		} finally {
-			setSavingPermsFor(null);
-		}
-	};
 
 	const handleApplyTemplate = async (templateName: string) => {
 		setApplying(templateName);
@@ -441,8 +388,6 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 			setDeletingRoleId(null);
 		}
 	};
-
-	const grouped = groupPermissions(allPermissions);
 
 	const nonOwnerRoles = roles.filter(r => r.name !== 'Owner');
 
@@ -513,97 +458,36 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 				)}
 			</div>
 
-			{/* Current org roles */}
+			{/* Applied roles list */}
 			{nonOwnerRoles.length > 0 && (
 				<div>
 					<p className="text-sm font-medium mb-3">Your Roles</p>
-					<div className="space-y-2">
+					<div className="flex flex-wrap gap-2">
 						{roles.map(role => {
 							const isOwner = role.name === 'Owner';
-							const isExpanded = expandedRoleId === role.id;
-							const pending = pendingPerms[role.id];
 							return (
-								<div key={role.id} className="rounded-lg border overflow-hidden">
-									{/* Header row */}
-									<div className="flex items-center justify-between py-3 px-4">
+								<div key={role.id} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${isOwner ? 'bg-primary/5 border-primary/20 text-primary' : 'border-border'
+									}`}>
+									<span className="font-medium">{role.name}</span>
+									{isOwner && <span className="text-xs opacity-60">you</span>}
+									{!isOwner && (
 										<button
 											type="button"
-											className="flex items-center gap-3 flex-1 text-left"
-											onClick={() => handleToggleExpand(role)}
-											disabled={isOwner}
+											onClick={() => handleDelete(role.id)}
+											disabled={deletingRoleId === role.id}
+											className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
 										>
-											<div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${isOwner ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-												}`}>
-												{role.priority}
-											</div>
-											<div>
-												<p className="font-medium text-sm">{role.name}</p>
-												{isOwner
-													? <p className="text-xs text-muted-foreground">Auto-assigned to you</p>
-													: <p className="text-xs text-muted-foreground">{(role.permissions ?? []).length} permissions</p>
-												}
-											</div>
+											{deletingRoleId === role.id
+												? <Loader2 className="h-3 w-3 animate-spin" />
+												: <span className="text-xs leading-none">&times;</span>
+											}
 										</button>
-										<div className="flex items-center gap-1 shrink-0">
-											{!isOwner && (
-												<Button
-													variant="ghost" size="icon" className="h-8 w-8"
-													disabled={deletingRoleId === role.id}
-													onClick={() => handleDelete(role.id)}
-												>
-													{deletingRoleId === role.id
-														? <Loader2 className="h-4 w-4 animate-spin" />
-														: <Trash2 className="h-4 w-4 text-destructive" />
-													}
-												</Button>
-											)}
-											{!isOwner && (
-												<Button
-													variant="ghost" size="icon" className="h-8 w-8"
-													onClick={() => handleToggleExpand(role)}
-												>
-													<ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''
-														}`} />
-												</Button>
-											)}
-										</div>
-									</div>
-
-									{/* Expanded: permission editor */}
-									{isExpanded && pending && (
-										<div className="border-t px-4 py-4 space-y-5 bg-muted/20">
-											{Object.entries(grouped).map(([category, perms]) => (
-												<div key={category}>
-													<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{category}</p>
-													<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-														{perms.map(p => (
-															<label key={p.key} className="flex items-start gap-2 cursor-pointer group">
-																<Checkbox
-																	checked={pending.has(p.key)}
-																	onCheckedChange={() => togglePerm(role.id, p.key)}
-																	className="mt-0.5 shrink-0"
-																/>
-																<div>
-																	<p className="text-xs font-medium leading-none">{p.key}</p>
-																	<p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
-																</div>
-															</label>
-														))}
-													</div>
-												</div>
-											))}
-											<div className="flex justify-end gap-2 pt-2">
-												<Button variant="ghost" size="sm" onClick={() => setExpandedRoleId(null)}>Cancel</Button>
-												<Button size="sm" onClick={() => handleSavePerms(role.id)} disabled={savingPermsFor === role.id}>
-													{savingPermsFor === role.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save Permissions'}
-												</Button>
-											</div>
-										</div>
 									)}
 								</div>
 							);
 						})}
 					</div>
+					<p className="text-xs text-muted-foreground mt-2">You can edit role permissions from Settings after setup.</p>
 				</div>
 			)}
 

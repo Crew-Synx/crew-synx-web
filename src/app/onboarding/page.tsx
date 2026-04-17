@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,57 +43,47 @@ export default function OnboardingPage() {
 	};
 
 	return (
-		<div className="flex min-h-screen items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
-			<div className="w-full max-w-md space-y-8">
-				<div className="text-center">
-					<div className="mx-auto flex items-center justify-center">
-						<LogoMark size={56} />
+		<div className="flex min-h-screen items-center justify-center px-6">
+			<div className="w-full max-w-sm space-y-8">
+				<div className="space-y-4">
+					<LogoMark size={48} />
+					<div>
+						<h1 className="text-2xl font-semibold tracking-tight">Create your organization</h1>
+						<p className="text-sm text-muted-foreground mt-1">You can change this later from settings</p>
 					</div>
-					<h2 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
-						Create an organization
-					</h2>
-					<p className="mt-2 text-sm text-muted-foreground">
-						Give your organization a name to get started
-					</p>
 				</div>
 
-				<Card className="shadow-lg border-0 bg-card text-card-foreground">
-					<CardContent className="pt-6">
-						<form className="space-y-6" onSubmit={handleCreateOrg}>
-							<div className="space-y-2">
-								<Label htmlFor="orgName" className="font-semibold">Organization Name</Label>
-								<Input
-									id="orgName"
-									required
-									value={orgName}
-									onChange={(e) => setOrgName(e.target.value)}
-									placeholder="My Company"
-									className="w-full p-3 bg-muted/50"
-									disabled={isLoading}
-								/>
-							</div>
+				<form className="space-y-4" onSubmit={handleCreateOrg}>
+					<div>
+						<Label htmlFor="orgName" className="text-sm font-medium">Organization name</Label>
+						<Input
+							id="orgName"
+							required
+							value={orgName}
+							onChange={(e) => setOrgName(e.target.value)}
+							placeholder="Acme Corp"
+							className="mt-1.5"
+							disabled={isLoading}
+							autoFocus
+						/>
+					</div>
 
-							{error && (
-								<p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
-							)}
+					{error && (
+						<p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
+					)}
 
-							<Button
-								type="submit"
-								className="w-full h-12 text-base font-semibold"
-								disabled={isLoading || !orgName.trim()}
-							>
-								{isLoading ? (
-									<>
-										<Loader2 className="mr-2 h-5 w-5 animate-spin" />
-										Creating...
-									</>
-								) : (
-									'Create Organization'
-								)}
-							</Button>
-						</form>
-					</CardContent>
-				</Card>
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={isLoading || !orgName.trim()}
+					>
+						{isLoading ? (
+							<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
+						) : (
+							'Continue'
+						)}
+					</Button>
+				</form>
 			</div>
 		</div>
 	);
