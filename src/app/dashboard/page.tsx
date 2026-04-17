@@ -459,7 +459,7 @@ export default function DashboardPage() {
 				{selectedOrg ? (
 					<div className="space-y-6">
 						{/* HRMS Quick Access */}
-						<div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+						<div className="grid grid-cols-2 md:grid-cols-6 gap-4">
 							<Link href="/employees" className="group">
 								<Card className="border-border/50 transition-colors group-hover:border-primary/50">
 									<CardContent className="flex items-center gap-3 p-4">
@@ -521,6 +521,19 @@ export default function DashboardPage() {
 										<div>
 											<p className="text-sm font-medium">Attendance</p>
 											<p className="text-xs text-muted-foreground">QR scan & away tickets</p>
+										</div>
+									</CardContent>
+								</Card>
+							</Link>
+							<Link href="/roles" className="group">
+								<Card className="border-border/50 transition-colors group-hover:border-primary/50">
+									<CardContent className="flex items-center gap-3 p-4">
+										<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400">
+											<Shield className="h-5 w-5" />
+										</div>
+										<div>
+											<p className="text-sm font-medium">Roles</p>
+											<p className="text-xs text-muted-foreground">Permissions & access</p>
 										</div>
 									</CardContent>
 								</Card>
