@@ -102,6 +102,7 @@ export interface Role {
 	id: string;
 	name: string;
 	priority: number;
+	is_system?: boolean;
 	permissions: string[];
 }
 
