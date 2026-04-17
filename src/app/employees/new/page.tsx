@@ -176,10 +176,10 @@ function OnboardEmployeeInner() {
 						<div key={i} className="flex items-center gap-3">
 							<div className="flex items-center gap-2">
 								<div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${i < step
-										? 'bg-primary text-primary-foreground'
-										: i === step
-											? 'border-2 border-primary text-primary'
-											: 'border border-muted-foreground/30 text-muted-foreground'
+									? 'bg-primary text-primary-foreground'
+									: i === step
+										? 'border-2 border-primary text-primary'
+										: 'border border-muted-foreground/30 text-muted-foreground'
 									}`}>
 									{i < step ? <Check className="h-3 w-3" /> : i + 1}
 								</div>
@@ -339,8 +339,8 @@ function OnboardEmployeeInner() {
 										type="button"
 										onClick={() => set('employment_type', t.value)}
 										className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${form.employment_type === t.value
-												? 'bg-primary text-primary-foreground border-primary'
-												: 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+											? 'bg-primary text-primary-foreground border-primary'
+											: 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
 											}`}
 									>
 										{t.label}
