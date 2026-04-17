@@ -94,7 +94,14 @@ export const RoleSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	priority: z.number(),
-	is_system: z.boolean(),
+	is_system: z.boolean().optional(),
+	permissions: z.array(z.string()).default([]),
+}).passthrough();
+
+export const PermissionSchema = z.object({
+	id: z.string(),
+	key: z.string(),
+	description: z.string(),
 }).passthrough();
 
 export const MemberSchema = z.object({

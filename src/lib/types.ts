@@ -102,6 +102,13 @@ export interface Role {
 	id: string;
 	name: string;
 	priority: number;
+	permissions: string[];
+}
+
+export interface Permission {
+	id: string;
+	key: string;
+	description: string;
 }
 
 // ─── Employee / Organization Member ─────────────────────────────────
