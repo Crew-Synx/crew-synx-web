@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { AppShellProvider } from "@/components/app-shell";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -89,7 +90,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <AppShellProvider>
+            {children}
+          </AppShellProvider>
           <Toaster />
         </ThemeProvider>
       </body>
