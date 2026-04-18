@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useAppContext } from '@/components/app-shell';
-import { Separator } from '@/components/ui/separator';
 import {
 	Loader2,
 	Users,
@@ -20,7 +17,6 @@ import {
 	Shield,
 	Crown,
 	MoreHorizontal,
-	Check,
 } from 'lucide-react';
 import {
 	DropdownMenu,
@@ -63,15 +59,10 @@ function getRoleIcon(roleName?: string) {
 }
 
 export default function DashboardPage() {
-	const { user, selectedOrg, setSelectedOrg } = useAppContext();
+	const { user, selectedOrg } = useAppContext();
 	const [members, setMembers] = useState<Member[]>([]);
 	const [roles, setRoles] = useState<Role[]>([]);
 	const [membersLoading, setMembersLoading] = useState(false);
-
-	// Org settings
-	const [orgName, setOrgName] = useState('');
-	const [savingOrg, setSavingOrg] = useState(false);
-	const [orgSaved, setOrgSaved] = useState(false);
 
 	// Error / action states
 	const [actionError, setActionError] = useState<string | null>(null);
@@ -122,7 +113,6 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		if (selectedOrg) {
-			setOrgName(selectedOrg.name);
 			fetchMembers(selectedOrg.id);
 		}
 	}, [selectedOrg?.id, fetchMembers]);
@@ -162,34 +152,6 @@ export default function DashboardPage() {
 		}
 	};
 
-	const handleSaveOrg = async () => {
-		if (!selectedOrg) return;
-		setActionError(null);
-		setSavingOrg(true);
-		setOrgSaved(false);
-		try {
-			const res = await apiFetch(`/organizations/${selectedOrg.id}/`, {
-				method: 'PATCH',
-				orgId: selectedOrg.id,
-				body: JSON.stringify({ name: orgName }),
-			});
-			if (res.ok) {
-				const data = await res.json().catch(() => ({ data: null }));
-				const updated = data.data;
-				setSelectedOrg(updated);
-				setOrgSaved(true);
-				setTimeout(() => setOrgSaved(false), 2000);
-			} else {
-				const data = await res.json().catch(() => ({}));
-				setActionError(data?.error ?? 'Failed to save organization name');
-			}
-		} catch (err: unknown) {
-			setActionError(err instanceof Error ? err.message : 'Failed to save organization name');
-		} finally {
-			setSavingOrg(false);
-		}
-	};
-
 	return (
 		<div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 			{/* Welcome */}
@@ -203,57 +165,9 @@ export default function DashboardPage() {
 			</div>
 
 			{selectedOrg ? (
-				<div className="grid gap-6 lg:grid-cols-3">
-					{/* Left: Organization settings */}
-					<div className="space-y-6">
-						<Card className="border-border/50">
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2 text-lg">
-									<Building2 className="h-5 w-5" />
-									Organization
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="space-y-2">
-									<Label htmlFor="orgName">Name</Label>
-									<Input
-										id="orgName"
-										value={orgName}
-										onChange={(e) => setOrgName(e.target.value)}
-									/>
-								</div>
-								<Button
-									size="sm"
-									onClick={handleSaveOrg}
-									disabled={savingOrg || orgName === selectedOrg.name}
-								>
-									{savingOrg ? (
-										<>
-											<Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-											Saving…
-										</>
-									) : orgSaved ? (
-										<>
-											<Check className="mr-2 h-3.5 w-3.5" />
-											Saved
-										</>
-									) : (
-										'Save'
-									)}
-								</Button>
-								{actionError && (
-									<p className="text-sm text-destructive mt-1">{actionError}</p>
-								)}
-								<Separator />
-								<div className="text-xs text-muted-foreground">
-									<span className="font-medium">Slug:</span> {selectedOrg.slug}
-								</div>
-							</CardContent>
-						</Card>
-					</div>
-
-					{/* Right: Team members */}
-					<div className="lg:col-span-2">
+				<div>
+					{/* Team members */}
+					<div>
 						<Card className="border-border/50">
 							<CardHeader>
 								<div className="flex items-center justify-between">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAppContext } from '@/components/app-shell';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -67,8 +68,16 @@ const DEFAULT_PREFS: NotificationPref[] = [
 ];
 
 export default function SettingsPage() {
+	const { userRole, selectedOrg, setSelectedOrg } = useAppContext();
+	const canManageOrg = (userRole?.priority ?? 99) <= 1;
 	const [profile, setProfile] = useState<UserProfile | null>(null);
 	const [orgs, setOrgs] = useState<Organization[]>([]);
+
+	// Org settings
+	const [orgName, setOrgName] = useState('');
+	const [savingOrg, setSavingOrg] = useState(false);
+	const [orgSaved, setOrgSaved] = useState(false);
+	const [saveOrgError, setSaveOrgError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [name, setName] = useState('');
@@ -213,6 +222,37 @@ export default function SettingsPage() {
 		}
 	};
 
+	useEffect(() => {
+		if (selectedOrg) setOrgName(selectedOrg.name);
+	}, [selectedOrg?.id]);
+
+	const handleSaveOrg = async () => {
+		if (!selectedOrg) return;
+		setSaveOrgError(null);
+		setSavingOrg(true);
+		setOrgSaved(false);
+		try {
+			const res = await apiFetch(`/organizations/${selectedOrg.id}/`, {
+				method: 'PATCH',
+				orgId: selectedOrg.id,
+				body: JSON.stringify({ name: orgName }),
+			});
+			if (res.ok) {
+				const data = await res.json().catch(() => ({ data: null }));
+				setSelectedOrg(data.data);
+				setOrgSaved(true);
+				setTimeout(() => setOrgSaved(false), 2000);
+			} else {
+				const data = await res.json().catch(() => ({}));
+				setSaveOrgError(data?.error ?? 'Failed to save organization name');
+			}
+		} catch (err: unknown) {
+			setSaveOrgError(err instanceof Error ? err.message : 'Failed to save organization name');
+		} finally {
+			setSavingOrg(false);
+		}
+	};
+
 	const handleLogout = async () => {
 		await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
 		router.push('/auth/login');
@@ -321,6 +361,12 @@ export default function SettingsPage() {
 							<Shield className="h-4 w-4" />
 							Security
 						</TabsTrigger>
+						{canManageOrg && (
+							<TabsTrigger value="organization" className="gap-2">
+								<Building2 className="h-4 w-4" />
+								Organization
+							</TabsTrigger>
+						)}
 					</TabsList>
 
 					{/* Profile Tab */}
@@ -516,6 +562,63 @@ export default function SettingsPage() {
 						</Card>
 					</TabsContent>
 
+					{/* Organization Tab — owners/admins only */}
+					{
+						canManageOrg && (
+							<TabsContent value="organization">
+								<Card className="border-border/50">
+									<CardHeader>
+										<CardTitle className="flex items-center gap-2">
+											<Building2 className="h-5 w-5" />
+											Organization
+										</CardTitle>
+										<CardDescription>
+											Update your organization&apos;s display name.
+										</CardDescription>
+									</CardHeader>
+									<CardContent className="space-y-4">
+										{selectedOrg ? (
+											<>
+												<div className="space-y-2">
+													<Label htmlFor="orgName">Name</Label>
+													<Input
+														id="orgName"
+														value={orgName}
+														onChange={(e) => setOrgName(e.target.value)}
+													/>
+												</div>
+												<div className="flex flex-col gap-2">
+													{saveOrgError && (
+														<p className="text-sm text-destructive">{saveOrgError}</p>
+													)}
+													<Button
+														size="sm"
+														onClick={handleSaveOrg}
+														disabled={savingOrg || orgName === selectedOrg.name}
+													>
+														{savingOrg ? (
+															<><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Saving…</>
+														) : orgSaved ? (
+															<><Check className="mr-2 h-3.5 w-3.5" />Saved</>
+														) : (
+															'Save Changes'
+														)}
+													</Button>
+												</div>
+												<Separator />
+												<div className="text-xs text-muted-foreground">
+													<span className="font-medium">Slug:</span> {selectedOrg.slug}
+												</div>
+											</>
+										) : (
+											<p className="text-sm text-muted-foreground">No organization selected.</p>
+										)}
+									</CardContent>
+								</Card>
+							</TabsContent>
+						)
+					}
+
 					{/* Security Tab */}
 					<TabsContent value="security">
 						<div className="space-y-6">
@@ -635,11 +738,11 @@ export default function SettingsPage() {
 							</Card>
 						</div>
 					</TabsContent>
-				</Tabs>
-			</main>
+				</Tabs >
+			</main >
 
 			{/* Delete Account Dialog */}
-			<Dialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen}>
+			<Dialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen} >
 				<DialogContent className="max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2 text-destructive">
