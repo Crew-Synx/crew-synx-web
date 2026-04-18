@@ -120,7 +120,6 @@ export interface Employee {
 	user_email: string;
 	user_name: string;
 	user_avatar_url?: string | null;
-	employee_id: string;
 	role?: string;
 	role_name?: string;
 	branch?: string;
@@ -200,7 +199,6 @@ export interface MemberListItem {
 	user_email: string;
 	user_name: string;
 	user_avatar_url?: string | null;
-	employee_id: string;
 	role?: string;
 	role_name?: string;
 	branch?: string;

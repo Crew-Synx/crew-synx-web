@@ -32,7 +32,7 @@ export default function LoginForm() {
 
     const payloadResult = RequestOtpPayloadSchema.safeParse({ user_id: userId.trim() });
     if (!payloadResult.success) {
-      setError('Please enter a valid employee ID or email.');
+      setError('Please enter a valid email address.');
       return;
     }
 
@@ -81,16 +81,16 @@ export default function LoginForm() {
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
           )}
           <div className="space-y-2">
-            <Label htmlFor="userId" className="font-semibold text-gray-700">Employee ID or Email</Label>
+            <Label htmlFor="userId" className="font-semibold text-gray-700">Email</Label>
             <Input
               id="userId"
               name="userId"
-              type="text"
-              autoComplete="username"
+              type="email"
+              autoComplete="email"
               required
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              placeholder="e.g. 001-BLR or you@email.com"
+              placeholder="you@email.com"
               className="w-full p-3 h-12 bg-muted/50"
               disabled={isLoading}
             />

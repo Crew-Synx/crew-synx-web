@@ -286,7 +286,6 @@ function OnboardEmployeeInner() {
 									{branches.map(b => <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>)}
 								</SelectContent>
 							</Select>
-							<p className="text-xs text-muted-foreground mt-1">Determines the employee ID</p>
 						</div>
 
 						{/* Department + Designation (optional) */}

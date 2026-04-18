@@ -189,7 +189,7 @@ export default function VerifyForm() {
 
           <div className="text-center text-sm mt-2">
             <Link href={redirectUri ? `/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}` : "/auth/login"} className="font-medium text-muted-foreground hover:text-foreground">
-              Change Employee ID
+              Change Email
             </Link>
           </div>
 

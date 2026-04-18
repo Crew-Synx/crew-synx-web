@@ -117,7 +117,6 @@ export const EmployeeSchema = z.object({
 	user_email: z.string().optional().default(''),
 	user_name: z.string().optional().default(''),
 	user_avatar_url: z.string().nullish().transform(v => v ?? undefined),
-	employee_id: z.string().optional().default(''),
 	encrypted_qr_payload: z.string().nullish().transform(v => v ?? undefined),
 	role: z.string().nullish().transform(v => v ?? undefined),
 	role_name: z.string().nullish().transform(v => v ?? undefined),

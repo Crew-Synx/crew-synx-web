@@ -128,7 +128,7 @@ function BranchesInner() {
 							<DialogHeader>
 								<DialogTitle>Create New Branch</DialogTitle>
 								<DialogDescription>
-									Add a new office or branch. The branch code will be used in employee IDs.
+									Add a new office or branch location.
 								</DialogDescription>
 							</DialogHeader>
 							<div className="grid gap-4 py-4">
@@ -140,7 +140,6 @@ function BranchesInner() {
 									<div>
 										<Label>Branch Code *</Label>
 										<Input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="e.g. BLR" maxLength={10} />
-										<p className="text-xs text-muted-foreground mt-1">Used in employee IDs (e.g. 001-BLR)</p>
 									</div>
 								</div>
 								<div className="grid grid-cols-2 gap-4">
@@ -190,7 +189,7 @@ function BranchesInner() {
 							<Building2 className="h-12 w-12 text-muted-foreground mb-4" />
 							<h3 className="font-semibold text-lg">No branches yet</h3>
 							<p className="text-sm text-muted-foreground mt-1">
-								Create your first branch to start assigning employees and generating employee IDs.
+								Create your first branch to start assigning employees.
 							</p>
 						</CardContent>
 					</Card>

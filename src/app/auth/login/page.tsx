@@ -5,7 +5,7 @@ import { LogoMark } from '@/components/ui/logo';
 
 export const metadata: Metadata = {
   title: 'Sign In | CrewSynx',
-  description: 'Sign in to CrewSynx with your employee ID and a one-time password.',
+  description: 'Sign in to CrewSynx with your email and a one-time password.',
 };
 
 export default function LoginPage() {

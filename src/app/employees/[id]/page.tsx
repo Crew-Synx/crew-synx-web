@@ -137,9 +137,7 @@ export default function EmployeeDetailPage() {
 									{employee.status}
 								</Badge>
 							</div>
-							<p className="text-sm text-muted-foreground font-mono">
-								{employee.employee_id || 'No ID assigned'}
-							</p>
+
 						</div>
 					</div>
 					{!editing ? (
@@ -191,7 +189,7 @@ export default function EmployeeDetailPage() {
 								This QR is encrypted. Only an admin scanner can read the employee data —
 								regular QR scanners will see gibberish.
 							</p>
-							<p className="text-xs font-mono text-muted-foreground">{employee.employee_id}</p>
+
 						</CardContent>
 					</Card>
 

@@ -195,7 +195,7 @@ export default function EmployeesPage() {
 									<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 									<Input
 										className="pl-9"
-										placeholder="Search by name, email, or employee ID..."
+										placeholder="Search by name or email..."
 										value={search}
 										onChange={e => setSearch(e.target.value)}
 									/>
@@ -256,7 +256,6 @@ export default function EmployeesPage() {
 									<Table>
 										<TableHeader>
 											<TableRow>
-												<TableHead>Employee ID</TableHead>
 												<TableHead>Name</TableHead>
 												<TableHead>Designation</TableHead>
 												<TableHead>Status</TableHead>
@@ -268,9 +267,6 @@ export default function EmployeesPage() {
 												const sc = statusConfig[emp.status] ?? { label: emp.status, className: '' };
 												return (
 													<TableRow key={emp.id} className="hover:bg-muted/50">
-														<TableCell className="font-mono text-sm font-medium">
-															{emp.employee_id || <span className="text-muted-foreground text-xs">No ID</span>}
-														</TableCell>
 														<TableCell>
 															<div>
 																<p className="font-medium">{emp.user_name || <span className="text-muted-foreground">—</span>}</p>

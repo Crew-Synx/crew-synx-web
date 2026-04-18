@@ -568,7 +568,7 @@ function BranchesStep({ orgId, branches, onReload }: {
 					<Badge variant="secondary" className="text-xs">Optional</Badge>
 				</h2>
 				<p className="text-sm text-muted-foreground mt-1">
-					Add office locations if your company has multiple branches. The branch code is used in auto-generated employee IDs (e.g. 001-BLR). You can skip this and add branches later.
+					Add office locations if your company has multiple branches. You can skip this and add branches later.
 				</p>
 			</div>
 
@@ -618,7 +618,6 @@ function BranchesStep({ orgId, branches, onReload }: {
 								placeholder="e.g. BLR"
 								maxLength={10}
 							/>
-							<p className="text-xs text-muted-foreground mt-1">Used in employee IDs</p>
 						</div>
 					</div>
 					<div className="grid grid-cols-3 gap-4">
