@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAppContext } from './app-shell';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
 	LayoutDashboard,
@@ -17,23 +17,17 @@ import {
 	Clock,
 	Shield,
 	Settings,
-	ChevronRight,
 	ChevronLeft,
+	ChevronRight,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 
-interface SubItem {
-	title: string;
-	href: string;
-}
-
 interface NavItem {
 	title: string;
-	href?: string;
+	href: string;
 	icon: React.ComponentType<{ className?: string }>;
 	iconColor: string;
 	iconBg: string;
-	children?: SubItem[];
 	permission?: (priority: number, perms: string[]) => boolean;
 }
 
@@ -61,36 +55,30 @@ function buildNavGroups(): NavGroup[] {
 			items: [
 				{
 					title: 'Employees',
+					href: '/employees',
 					icon: Briefcase,
 					iconColor: 'text-blue-600 dark:text-blue-400',
 					iconBg: 'bg-blue-100 dark:bg-blue-950',
 					permission: (p, perms) =>
 						p <= 2 || perms.some((k) => k.startsWith('member.')),
-					children: [
-						{ title: 'Directory', href: '/employees' },
-						{ title: 'Onboard New', href: '/employees/new' },
-					],
 				},
 				{
 					title: 'Branches',
+					href: '/branches',
 					icon: GitBranch,
 					iconColor: 'text-green-600 dark:text-green-400',
 					iconBg: 'bg-green-100 dark:bg-green-950',
 					permission: (p, perms) =>
 						p <= 2 || perms.some((k) => k.startsWith('branch.')),
-					children: [{ title: 'All Branches', href: '/branches' }],
 				},
 				{
 					title: 'Departments',
+					href: '/departments',
 					icon: Layers,
 					iconColor: 'text-purple-600 dark:text-purple-400',
 					iconBg: 'bg-purple-100 dark:bg-purple-950',
 					permission: (p, perms) =>
 						p <= 2 || perms.some((k) => k.startsWith('department.')),
-					children: [
-						{ title: 'Departments', href: '/departments' },
-						{ title: 'Designations', href: '/designations' },
-					],
 				},
 			],
 		},
@@ -99,23 +87,17 @@ function buildNavGroups(): NavGroup[] {
 			items: [
 				{
 					title: 'Expenses',
+					href: '/expenses',
 					icon: Receipt,
 					iconColor: 'text-orange-600 dark:text-orange-400',
 					iconBg: 'bg-orange-100 dark:bg-orange-950',
-					children: [
-						{ title: 'My Claims', href: '/expenses' },
-						{ title: 'All Claims', href: '/expenses?view=all' },
-					],
 				},
 				{
 					title: 'Attendance',
+					href: '/attendance',
 					icon: Clock,
 					iconColor: 'text-teal-600 dark:text-teal-400',
 					iconBg: 'bg-teal-100 dark:bg-teal-950',
-					children: [
-						{ title: 'Records', href: '/attendance' },
-						{ title: 'Away Tickets', href: '/attendance?tab=away' },
-					],
 				},
 			],
 		},
@@ -124,11 +106,11 @@ function buildNavGroups(): NavGroup[] {
 			items: [
 				{
 					title: 'Roles',
+					href: '/roles',
 					icon: Shield,
 					iconColor: 'text-indigo-600 dark:text-indigo-400',
 					iconBg: 'bg-indigo-100 dark:bg-indigo-950',
 					permission: (p) => p <= 1,
-					children: [{ title: 'Manage Roles', href: '/roles' }],
 				},
 				{
 					title: 'Settings',
@@ -143,6 +125,7 @@ function buildNavGroups(): NavGroup[] {
 }
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+	const isMobile = !!onNavigate;
 	const pathname = usePathname();
 	const { userRole, sidebarCollapsed, setSidebarCollapsed } = useAppContext();
 
@@ -150,42 +133,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 	const perms = userRole?.permissions ?? [];
 	const navGroups = buildNavGroups();
 
-	const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-
-	// Auto-open the section containing the active route
-	useEffect(() => {
-		const updates: Record<string, boolean> = {};
-		for (const group of navGroups) {
-			for (const item of group.items) {
-				if (
-					item.children?.some((child) =>
-						pathname?.startsWith(child.href.split('?')[0])
-					)
-				) {
-					updates[item.title] = true;
-				}
-			}
-		}
-		if (Object.keys(updates).length > 0) {
-			setOpenSections((prev) => ({ ...prev, ...updates }));
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [pathname]);
-
-	const toggleSection = (title: string) => {
-		setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
-	};
-
-	const isActive = (href?: string) => {
-		if (!href) return false;
-		const cleanHref = href.split('?')[0];
-		if (cleanHref === '/dashboard') return pathname === cleanHref;
-		return pathname === cleanHref || pathname?.startsWith(cleanHref + '/');
-	};
-
-	const isGroupActive = (item: NavItem) => {
-		if (item.href && isActive(item.href)) return true;
-		return item.children?.some((c) => isActive(c.href)) ?? false;
+	const isActive = (href: string) => {
+		if (href === '/dashboard') return pathname === href;
+		return pathname === href || pathname?.startsWith(href + '/');
 	};
 
 	return (
@@ -198,7 +148,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 				)}
 			>
 				<Logo size={28} href="/dashboard" showName={!sidebarCollapsed} />
-				{!sidebarCollapsed && (
+				{!sidebarCollapsed && !isMobile && (
 					<Button
 						variant="ghost"
 						size="icon"
@@ -232,119 +182,40 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 								<div className="space-y-0.5">
 									{visibleItems.map((item) => (
-										<div key={item.title}>
-											{item.children ? (
-												<>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<button
-																onClick={() =>
-																	!sidebarCollapsed && toggleSection(item.title)
-																}
-																className={cn(
-																	'flex w-full items-center gap-2.5 rounded-lg py-2 text-sm transition-colors',
-																	sidebarCollapsed
-																		? 'justify-center px-2'
-																		: 'px-3',
-																	isGroupActive(item)
-																		? 'bg-accent text-accent-foreground'
-																		: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-																)}
-															>
-																<span
-																	className={cn(
-																		'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
-																		item.iconBg
-																	)}
-																>
-																	<item.icon
-																		className={cn('h-4 w-4', item.iconColor)}
-																	/>
-																</span>
-																{!sidebarCollapsed && (
-																	<>
-																		<span className="flex-1 text-left font-medium leading-none">
-																			{item.title}
-																		</span>
-																		<ChevronRight
-																			className={cn(
-																				'h-3.5 w-3.5 shrink-0 transition-transform text-muted-foreground/50',
-																				openSections[item.title] && 'rotate-90'
-																			)}
-																		/>
-																	</>
-																)}
-															</button>
-														</TooltipTrigger>
-														{sidebarCollapsed && (
-															<TooltipContent side="right">
-																{item.title}
-															</TooltipContent>
+										<Tooltip key={item.title}>
+											<TooltipTrigger asChild>
+												<Link
+													href={item.href}
+													onClick={onNavigate}
+													className={cn(
+														'flex items-center gap-2.5 rounded-lg py-2 text-sm transition-colors',
+														sidebarCollapsed
+															? 'justify-center px-2'
+															: 'px-3',
+														isActive(item.href)
+															? 'bg-accent text-accent-foreground'
+															: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+													)}
+												>
+													<span
+														className={cn(
+															'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+															item.iconBg
 														)}
-													</Tooltip>
-
-													{/* Sub-items */}
-													{!sidebarCollapsed && openSections[item.title] && (
-														<div className="ml-4 mt-0.5 space-y-0.5 border-l border-border/40 pl-3">
-															{item.children.map((child) => (
-																<Link
-																	key={child.href}
-																	href={child.href}
-																	onClick={onNavigate}
-																	className={cn(
-																		'block rounded-md px-2 py-1.5 text-sm transition-colors',
-																		isActive(child.href)
-																			? 'text-foreground font-medium bg-accent/40'
-																			: 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
-																	)}
-																>
-																	{child.title}
-																</Link>
-															))}
-														</div>
-													)}
-												</>
-											) : (
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<Link
-															href={item.href!}
-															onClick={onNavigate}
-															className={cn(
-																'flex items-center gap-2.5 rounded-lg py-2 text-sm transition-colors',
-																sidebarCollapsed
-																	? 'justify-center px-2'
-																	: 'px-3',
-																isActive(item.href)
-																	? 'bg-accent text-accent-foreground'
-																	: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-															)}
-														>
-															<span
-																className={cn(
-																	'flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
-																	item.iconBg
-																)}
-															>
-																<item.icon
-																	className={cn('h-4 w-4', item.iconColor)}
-																/>
-															</span>
-															{!sidebarCollapsed && (
-																<span className="font-medium leading-none">
-																	{item.title}
-																</span>
-															)}
-														</Link>
-													</TooltipTrigger>
-													{sidebarCollapsed && (
-														<TooltipContent side="right">
+													>
+														<item.icon className={cn('h-4 w-4', item.iconColor)} />
+													</span>
+													{!sidebarCollapsed && (
+														<span className="font-medium leading-none">
 															{item.title}
-														</TooltipContent>
+														</span>
 													)}
-												</Tooltip>
+												</Link>
+											</TooltipTrigger>
+											{sidebarCollapsed && (
+												<TooltipContent side="right">{item.title}</TooltipContent>
 											)}
-										</div>
+										</Tooltip>
 									))}
 								</div>
 							</div>
@@ -388,6 +259,9 @@ export function AppSidebar() {
 			{/* Mobile sidebar (Sheet) */}
 			<Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
 				<SheetContent side="left" className="w-60 p-0 border-r border-border/50">
+					<VisuallyHidden.Root>
+						<SheetTitle>Navigation</SheetTitle>
+					</VisuallyHidden.Root>
 					<SidebarContent onNavigate={() => setMobileSidebarOpen(false)} />
 				</SheetContent>
 			</Sheet>

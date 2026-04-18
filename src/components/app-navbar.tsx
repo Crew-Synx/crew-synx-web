@@ -61,15 +61,7 @@ export function AppNavbar() {
 		<header className="flex h-14 shrink-0 items-center gap-3 border-b border-border/50 bg-card/80 backdrop-blur-sm px-4">
 			{/* Left: sidebar toggles */}
 			<div className="flex items-center gap-1">
-				{/* Desktop: toggle collapse */}
-				<Button
-					variant="ghost"
-					size="icon"
-					className="hidden lg:flex h-8 w-8 text-muted-foreground hover:text-foreground"
-					onClick={() => setSidebarCollapsed((prev) => !prev)}
-				>
-					<AlignLeft className="h-4 w-4" />
-				</Button>
+
 				{/* Mobile: open sheet */}
 				<Button
 					variant="ghost"
