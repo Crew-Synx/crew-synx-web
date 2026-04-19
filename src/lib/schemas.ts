@@ -120,17 +120,20 @@ export const RemoteCheckInRequestSchema = z.object({
 	created_at: z.string(),
 }).passthrough();
 
-export const ExpenseClaimSchema = z.object({
+export const PaymentSchema = z.object({
 	id: z.string(),
+	payment_type: z.enum(['client_payment', 'expense']),
 	title: z.string(),
-	expense_type: z.string(),
+	description: z.string().optional(),
 	amount: z.string(),
 	currency: z.string(),
-	expense_date: z.string(),
 	status: z.string(),
-	employee: z.string(),
-	employee_name: z.string(),
-	employee_email: z.string(),
+	payment_date: z.string(),
+	vendor_name: z.string().optional(),
+	receipt_number: z.string().optional(),
+	receipt_url: z.string().optional(),
+	created_by: z.string(),
+	created_by_name: z.string(),
 	created_at: z.string(),
 	updated_at: z.string(),
 }).passthrough();
@@ -158,7 +161,7 @@ export const RoleListResponse = apiListEnvelope(RoleSchema);
 export const EmployeeListResponse = apiListEnvelope(EmployeeSchema);
 export const AttendanceListResponse = apiListEnvelope(AttendanceSchema);
 export const RemoteRequestListResponse = apiListEnvelope(RemoteCheckInRequestSchema);
-export const ExpenseListResponse = apiListEnvelope(ExpenseClaimSchema);
+export const PaymentListResponse = apiListEnvelope(PaymentSchema);
 export const NotificationListResponse = apiListEnvelope(NotificationSchema);
 export const NotificationPrefListResponse = apiListEnvelope(NotificationPrefSchema);
 

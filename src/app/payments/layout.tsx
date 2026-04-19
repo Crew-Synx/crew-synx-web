@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-	title: 'Expenses | CrewSynx',
-	description: 'Manage and track employee expenses.',
+	title: 'Payments | CrewSynx',
+	description: 'Manage client payments and employee expense submissions.',
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

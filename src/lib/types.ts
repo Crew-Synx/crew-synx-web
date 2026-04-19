@@ -110,31 +110,26 @@ export interface Employee {
 	updated_at: string;
 }
 
-// ─── Expense Claim ──────────────────────────────────────────────────
+// ─── Payment (client payments + employee expenses) ──────────────────
 
-export interface ExpenseClaim {
+export interface Payment {
 	id: string;
+	payment_type: 'client_payment' | 'expense';
 	title: string;
 	description?: string;
-	expense_type: string;
 	amount: string;
 	currency: string;
-	expense_date: string;
-	receipt_url?: string;
-	receipt_number?: string;
+	category?: string;
+	category_name?: string;
+	status: 'pending' | 'approved' | 'rejected' | 'paid';
+	payment_date: string;
 	vendor_name?: string;
-	status: string;
-	employee: string;
-	employee_name: string;
-	employee_email: string;
-	reviewed_by?: string;
-	reviewed_by_name?: string;
-	review_note?: string;
-	reviewed_at?: string;
-	reimbursed_at?: string;
-	reimbursed_by?: string;
-	reimbursed_by_name?: string;
-	reimbursement_reference?: string;
+	receipt_number?: string;
+	receipt_url?: string;
+	created_by: string;
+	created_by_name: string;
+	approved_by?: string;
+	approved_by_name?: string;
 	created_at: string;
 	updated_at: string;
 }

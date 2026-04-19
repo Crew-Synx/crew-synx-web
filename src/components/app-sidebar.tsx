@@ -66,8 +66,8 @@ function buildNavGroups(): NavGroup[] {
 			label: 'Operations',
 			items: [
 				{
-					title: 'Expenses',
-					href: '/expenses',
+					title: 'Payments',
+					href: '/payments',
 					icon: Receipt,
 					iconColor: 'text-orange-600 dark:text-orange-400',
 					iconBg: 'bg-orange-100 dark:bg-orange-950',
