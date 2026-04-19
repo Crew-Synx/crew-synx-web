@@ -64,13 +64,18 @@ export const OrganizationSchema = z.object({
 	avatar_url: z.string().nullable().optional(),
 }).passthrough();
 
+const ModuleAccessSchema = z.object({
+	level: z.enum(['admin', 'write', 'read', 'hide']),
+	label: z.string(),
+});
+
 export const RoleSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	priority: z.number(),
 	is_system: z.boolean().optional(),
-	permissions: z.array(z.string()).default([]),
-});
+	access: z.record(z.string(), ModuleAccessSchema).default({}),
+}).passthrough();
 
 export const PermissionSchema = z.object({
 	id: z.string(),

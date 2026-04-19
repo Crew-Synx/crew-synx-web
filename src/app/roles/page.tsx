@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -17,9 +16,23 @@ import {
 	Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Loader2, Plus, Shield, Trash2, ArrowLeft, Pencil } from 'lucide-react';
-import type { Organization, Role, Permission } from '@/lib/types';
+import type { Organization, Role, AccessLevel } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
-import { parseListResponse, RoleSchema, PermissionSchema } from '@/lib/schemas';
+import { parseListResponse, RoleSchema } from '@/lib/schemas';
+
+// ─── Level config ────────────────────────────────────────────────────────────
+
+const LEVELS: { value: AccessLevel; label: string; desc: string; badge: string }[] = [
+	{ value: 'admin', label: 'Admin', desc: 'Full control — create, edit, delete, manage', badge: 'bg-violet-100 text-violet-700' },
+	{ value: 'write', label: 'Write', desc: 'Can create and edit', badge: 'bg-blue-100 text-blue-700' },
+	{ value: 'read', label: 'Read', desc: 'Can view only', badge: 'bg-emerald-100 text-emerald-700' },
+	{ value: 'hide', label: 'Hide', desc: 'No access — section hidden', badge: 'bg-gray-100 text-gray-500' },
+];
+
+function levelBadge(level: AccessLevel) {
+	const cfg = LEVELS.find(l => l.value === level) ?? LEVELS[3];
+	return <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badge}`}>{cfg.label}</span>;
+}
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -27,15 +40,85 @@ function getSelectedOrg(): Organization | null {
 	return stored ? JSON.parse(stored) : null;
 }
 
-// Group permission keys by their prefix (e.g. "employees.view" → "employees")
-function groupPermissions(permissions: Permission[]): Record<string, Permission[]> {
-	const groups: Record<string, Permission[]> = {};
-	for (const perm of permissions) {
-		const group = perm.key.split('.')[0] ?? 'other';
-		(groups[group] ??= []).push(perm);
-	}
-	return groups;
+// ─── Access summary for the roles table ──────────────────────────────────────
+
+function RoleAccessSummary({ role }: { role: Role }) {
+	const modules = Object.values(role.access ?? {});
+	if (modules.length === 0) return <span className="text-muted-foreground text-sm">No access set</span>;
+
+	const counts = { admin: 0, write: 0, read: 0, hide: 0 } as Record<AccessLevel, number>;
+	modules.forEach(m => { counts[m.level] = (counts[m.level] ?? 0) + 1; });
+
+	return (
+		<div className="flex flex-wrap gap-1">
+			{(Object.entries(counts) as [AccessLevel, number][])
+				.filter(([, n]) => n > 0)
+				.map(([level, count]) => {
+					const cfg = LEVELS.find(l => l.value === level)!;
+					return (
+						<span key={level} className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${cfg.badge}`}>
+							{count} {cfg.label}
+						</span>
+					);
+				})}
+		</div>
+	);
 }
+
+// ─── Edit dialog: module access table ────────────────────────────────────────
+
+function AccessTable({
+	access,
+	onChange,
+	disabled,
+}: {
+	access: Record<string, { level: AccessLevel; label: string }>;
+	onChange: (module: string, level: AccessLevel) => void;
+	disabled?: boolean;
+}) {
+	const modules = Object.entries(access);
+	if (modules.length === 0) return null;
+
+	return (
+		<div className="rounded-md border overflow-hidden">
+			<Table>
+				<TableHeader>
+					<TableRow className="bg-muted/40">
+						<TableHead className="w-36">Module</TableHead>
+						{LEVELS.map(l => (
+							<TableHead key={l.value} className="text-center w-20 px-1">
+								<div className="font-semibold">{l.label}</div>
+								<div className="text-[10px] text-muted-foreground font-normal leading-tight hidden sm:block">{l.desc}</div>
+							</TableHead>
+						))}
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{modules.map(([key, mod]) => (
+						<TableRow key={key}>
+							<TableCell className="font-medium text-sm py-2.5">{mod.label}</TableCell>
+							{LEVELS.map(l => (
+								<TableCell key={l.value} className="text-center px-1 py-2.5">
+									<input
+										type="radio"
+										name={`access-${key}`}
+										value={l.value}
+										checked={mod.level === l.value}
+										onChange={() => onChange(key, l.value)}
+										disabled={disabled}
+										className="accent-violet-600 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+									/>
+								</TableCell>
+							))}
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
+		</div>
+	);
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 
 function RolesInner() {
 	const router = useRouter();
@@ -44,25 +127,24 @@ function RolesInner() {
 
 	const [org, setOrg] = useState<Organization | null>(null);
 	const [roles, setRoles] = useState<Role[]>([]);
-	const [allPermissions, setAllPermissions] = useState<Permission[]>([]);
 	const [loading, setLoading] = useState(true);
 
 	// Create dialog
 	const [createOpen, setCreateOpen] = useState(false);
 	const [creating, setCreating] = useState(false);
-	const [createForm, setCreateForm] = useState({ name: '' });
+	const [newRoleName, setNewRoleName] = useState('');
 
 	// Edit dialog
 	const [editRole, setEditRole] = useState<Role | null>(null);
 	const [editName, setEditName] = useState('');
-	const [editPerms, setEditPerms] = useState<Set<string>>(new Set());
+	const [editAccess, setEditAccess] = useState<Record<string, { level: AccessLevel; label: string }>>({});
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		const o = getSelectedOrg();
 		if (!o) { router.push('/dashboard'); return; }
 		setOrg(o);
-		Promise.all([loadRoles(o.id), loadPermissions()]).finally(() => setLoading(false));
+		loadRoles(o.id).finally(() => setLoading(false));
 		if (returnUrl) setCreateOpen(true);
 	}, [router, returnUrl]);
 
@@ -74,28 +156,20 @@ function RolesInner() {
 		}
 	}
 
-	async function loadPermissions() {
-		const res = await apiFetch(`/roles/permissions/`);
-		if (res.ok) {
-			const data = await res.json().catch(() => ({ data: [] }));
-			setAllPermissions(parseListResponse(PermissionSchema, data));
-		}
-	}
-
 	async function handleCreate() {
-		if (!org || !createForm.name.trim()) return;
+		if (!org || !newRoleName.trim()) return;
 		setCreating(true);
 		try {
 			const res = await apiFetch(`/roles/`, {
 				method: 'POST',
 				orgId: org.id,
-				body: JSON.stringify({ name: createForm.name }),
+				body: JSON.stringify({ name: newRoleName.trim() }),
 			});
 			if (res.ok) {
 				const json = await res.json().catch(() => ({}));
 				const created = json.data || json;
 				setCreateOpen(false);
-				setCreateForm({ name: '' });
+				setNewRoleName('');
 				if (returnUrl) {
 					router.push(`${returnUrl}?reload=role&newId=${created.id}`);
 				} else {
@@ -110,26 +184,34 @@ function RolesInner() {
 	function openEdit(role: Role) {
 		setEditRole(role);
 		setEditName(role.name);
-		setEditPerms(new Set(role.permissions));
+		// Deep-copy access so changes don't mutate the list
+		setEditAccess(JSON.parse(JSON.stringify(role.access ?? {})));
+	}
+
+	function handleAccessChange(module: string, level: AccessLevel) {
+		setEditAccess(prev => ({
+			...prev,
+			[module]: { ...prev[module], level },
+		}));
 	}
 
 	async function handleSave() {
 		if (!org || !editRole) return;
 		setSaving(true);
 		try {
-			// Update name if changed
+			// Build simplified access payload {module: level}
+			const accessPayload: Record<string, AccessLevel> = {};
+			Object.entries(editAccess).forEach(([k, v]) => { accessPayload[k] = v.level; });
+
+			const body: Record<string, unknown> = { access: accessPayload };
 			if (editName.trim() && editName.trim() !== editRole.name) {
-				await apiFetch(`/roles/${editRole.id}/`, {
-					method: 'PATCH',
-					orgId: org.id,
-					body: JSON.stringify({ name: editName.trim() }),
-				});
+				body.name = editName.trim();
 			}
-			// Update permissions
+
 			const res = await apiFetch(`/roles/${editRole.id}/`, {
 				method: 'PATCH',
 				orgId: org.id,
-				body: JSON.stringify({ permissions: Array.from(editPerms) }),
+				body: JSON.stringify(body),
 			});
 			if (res.ok) {
 				setEditRole(null);
@@ -141,26 +223,9 @@ function RolesInner() {
 	}
 
 	async function handleDelete(roleId: string) {
-		if (!org || !confirm('Delete this role?')) return;
+		if (!org || !confirm('Delete this role? Members assigned to it will have no role until reassigned.')) return;
 		await apiFetch(`/roles/${roleId}/`, { method: 'DELETE', orgId: org.id });
 		await loadRoles(org.id);
-	}
-
-	function togglePerm(key: string) {
-		setEditPerms(prev => {
-			const next = new Set(prev);
-			if (next.has(key)) next.delete(key); else next.add(key);
-			return next;
-		});
-	}
-
-	function toggleGroup(keys: string[], allChecked: boolean) {
-		setEditPerms(prev => {
-			const next = new Set(prev);
-			if (allChecked) keys.forEach(k => next.delete(k));
-			else keys.forEach(k => next.add(k));
-			return next;
-		});
 	}
 
 	if (loading) {
@@ -171,11 +236,9 @@ function RolesInner() {
 		);
 	}
 
-	const permGroups = groupPermissions(allPermissions);
-
 	return (
 		<div className="min-h-screen bg-background">
-			<div className="mx-auto max-w-6xl p-6 space-y-6">
+			<div className="mx-auto max-w-5xl p-6 space-y-6">
 
 				{/* Header */}
 				<div className="flex items-center justify-between">
@@ -184,51 +247,60 @@ function RolesInner() {
 							<Link href={returnUrl ?? '/dashboard'}><ArrowLeft className="h-4 w-4" /></Link>
 						</Button>
 						<div>
-							<h1 className="text-2xl font-bold">Roles</h1>
-							<p className="text-sm text-muted-foreground">Manage employee roles and their permissions</p>
+							<h1 className="text-2xl font-bold">Roles & Access</h1>
+							<p className="text-sm text-muted-foreground">Control what each role can see and do</p>
 						</div>
 					</div>
 
-					{/* Create Role Dialog */}
+					{/* Create Role */}
 					<Dialog open={createOpen} onOpenChange={setCreateOpen}>
 						<DialogTrigger asChild>
-							<Button><Plus className="mr-2 h-4 w-4" />Add Role</Button>
+							<Button><Plus className="mr-2 h-4 w-4" />New Role</Button>
 						</DialogTrigger>
 						<DialogContent className="max-w-sm">
 							<DialogHeader>
 								<DialogTitle>Create New Role</DialogTitle>
-								<DialogDescription>Add a new role for employees in your organization.</DialogDescription>
+								<DialogDescription>Give it a name. You can set access levels after.</DialogDescription>
 							</DialogHeader>
-							<div className="grid gap-4 py-4">
-								<div>
-									<Label>Role Name *</Label>
-									<Input
-										value={createForm.name}
-										onChange={e => setCreateForm({ name: e.target.value })}
-										placeholder="e.g. Team Lead"
-										autoFocus
-										onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
-									/>
-								</div>
+							<div className="py-4">
+								<Label>Role Name</Label>
+								<Input
+									value={newRoleName}
+									onChange={e => setNewRoleName(e.target.value)}
+									placeholder="e.g. Team Lead"
+									autoFocus
+									className="mt-1"
+									onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
+								/>
 							</div>
 							<DialogFooter>
 								<Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-								<Button onClick={handleCreate} disabled={creating || !createForm.name.trim()}>
+								<Button onClick={handleCreate} disabled={creating || !newRoleName.trim()}>
 									{creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-									Create Role
+									Create
 								</Button>
 							</DialogFooter>
 						</DialogContent>
 					</Dialog>
 				</div>
 
-				{/* Roles Table */}
+				{/* Level legend */}
+				<div className="flex flex-wrap gap-3 text-sm">
+					{LEVELS.map(l => (
+						<span key={l.value} className="flex items-center gap-1.5">
+							<span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${l.badge}`}>{l.label}</span>
+							<span className="text-muted-foreground">{l.desc}</span>
+						</span>
+					))}
+				</div>
+
+				{/* Roles list */}
 				{roles.length === 0 ? (
 					<Card>
 						<CardContent className="flex flex-col items-center justify-center py-12 text-center">
 							<Shield className="h-12 w-12 text-muted-foreground mb-4" />
 							<h3 className="font-semibold text-lg">No roles yet</h3>
-							<p className="text-sm text-muted-foreground mt-1">Create roles to assign to employees.</p>
+							<p className="text-sm text-muted-foreground mt-1">Create a role to assign to team members.</p>
 						</CardContent>
 					</Card>
 				) : (
@@ -236,31 +308,21 @@ function RolesInner() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead>Role Name</TableHead>
-									<TableHead className="w-24 text-center">Priority</TableHead>
-									<TableHead>Permissions</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead>Access Summary</TableHead>
 									<TableHead className="w-24 text-right">Actions</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
 								{roles.map(role => (
 									<TableRow key={role.id}>
-										<TableCell className="font-medium">{role.name}</TableCell>
-										<TableCell className="text-center text-muted-foreground">{role.priority}</TableCell>
 										<TableCell>
-											{role.permissions.length === 0 ? (
-												<span className="text-muted-foreground text-sm">No permissions</span>
-											) : (
-												<div className="flex flex-wrap gap-1">
-													{role.permissions.slice(0, 5).map(p => (
-														<Badge key={p} variant="secondary" className="text-xs font-mono">{p}</Badge>
-													))}
-													{role.permissions.length > 5 && (
-														<Badge variant="outline" className="text-xs">+{role.permissions.length - 5} more</Badge>
-													)}
-												</div>
+											<div className="font-medium">{role.name}</div>
+											{role.name === 'Owner' && (
+												<div className="text-xs text-muted-foreground">Full access — cannot be edited</div>
 											)}
 										</TableCell>
+										<TableCell><RoleAccessSummary role={role} /></TableCell>
 										<TableCell className="text-right">
 											<div className="flex justify-end gap-1">
 												<Button
@@ -293,12 +355,14 @@ function RolesInner() {
 			<Dialog open={!!editRole} onOpenChange={open => { if (!open) setEditRole(null); }}>
 				<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
 					<DialogHeader>
-						<DialogTitle>Edit Role: {editRole?.name}</DialogTitle>
-						<DialogDescription>Update the role name and assign permissions.</DialogDescription>
+						<DialogTitle>Edit Role</DialogTitle>
+						<DialogDescription>
+							Set what this role can do in each area. Changes apply to all members with this role.
+						</DialogDescription>
 					</DialogHeader>
 
 					<div className="space-y-5 py-2">
-						{/* Name field — disabled for Owner */}
+						{/* Role name */}
 						<div>
 							<Label>Role Name</Label>
 							<Input
@@ -309,58 +373,15 @@ function RolesInner() {
 							/>
 						</div>
 
-						{/* Permissions */}
-						{allPermissions.length > 0 && (
+						{/* Access table */}
+						{Object.keys(editAccess).length > 0 && (
 							<div>
-								<Label className="mb-3 block">Permissions</Label>
-								<div className="space-y-4">
-									{Object.entries(permGroups).sort().map(([group, perms]) => {
-										const keys = perms.map(p => p.key);
-										const allChecked = keys.every(k => editPerms.has(k));
-										const someChecked = keys.some(k => editPerms.has(k));
-										return (
-											<div key={group} className="rounded-md border p-3 space-y-2">
-												<div className="flex items-center gap-2">
-													<Checkbox
-														id={`group-${group}`}
-														checked={allChecked}
-														data-state={someChecked && !allChecked ? 'indeterminate' : undefined}
-														onCheckedChange={() => toggleGroup(keys, allChecked)}
-														disabled={editRole?.name === 'Owner'}
-													/>
-													<label
-														htmlFor={`group-${group}`}
-														className="text-sm font-semibold capitalize cursor-pointer select-none"
-													>
-														{group.replace(/_/g, ' ')}
-													</label>
-												</div>
-												<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-6">
-													{perms.map(perm => (
-														<div key={perm.key} className="flex items-start gap-2">
-															<Checkbox
-																id={perm.key}
-																checked={editPerms.has(perm.key)}
-																onCheckedChange={() => togglePerm(perm.key)}
-																disabled={editRole?.name === 'Owner'}
-																className="mt-0.5"
-															/>
-															<label
-																htmlFor={perm.key}
-																className="text-sm cursor-pointer select-none leading-tight"
-															>
-																<span className="font-mono text-xs text-muted-foreground block">{perm.key}</span>
-																{perm.description && (
-																	<span className="text-muted-foreground">{perm.description}</span>
-																)}
-															</label>
-														</div>
-													))}
-												</div>
-											</div>
-										);
-									})}
-								</div>
+								<Label className="mb-3 block">Module Access</Label>
+								<AccessTable
+									access={editAccess}
+									onChange={handleAccessChange}
+									disabled={editRole?.name === 'Owner'}
+								/>
 							</div>
 						)}
 					</div>

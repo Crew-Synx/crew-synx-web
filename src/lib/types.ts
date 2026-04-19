@@ -53,12 +53,19 @@ export interface Organization {
 
 // ─── Role ───────────────────────────────────────────────────────────
 
+export type AccessLevel = 'admin' | 'write' | 'read' | 'hide';
+
+export interface ModuleAccess {
+	level: AccessLevel;
+	label: string;
+}
+
 export interface Role {
 	id: string;
 	name: string;
 	priority: number;
 	is_system?: boolean;
-	permissions: string[];
+	access: Record<string, ModuleAccess>;
 }
 
 export interface Permission {
