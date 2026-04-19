@@ -51,51 +51,6 @@ export interface Organization {
 	default_currency?: string;
 }
 
-// ─── Branch ─────────────────────────────────────────────────────────
-
-export interface Branch {
-	id: string;
-	name: string;
-	code: string;
-	address_line1?: string;
-	address_line2?: string;
-	city?: string;
-	state?: string;
-	country?: string;
-	postal_code?: string;
-	phone?: string;
-	email?: string;
-	is_head_office: boolean;
-	is_active: boolean;
-	employee_count: number;
-	created_at: string;
-}
-
-// ─── Department ─────────────────────────────────────────────────────
-
-export interface Department {
-	id: string;
-	name: string;
-	code?: string;
-	head?: string;
-	head_name?: string;
-	parent?: string;
-	parent_name?: string;
-	is_active: boolean;
-	employee_count: number;
-	created_at: string;
-}
-
-// ─── Designation ────────────────────────────────────────────────────
-
-export interface Designation {
-	id: string;
-	title: string;
-	level: number;
-	is_active: boolean;
-	created_at: string;
-}
-
 // ─── Role ───────────────────────────────────────────────────────────
 
 export interface Role {
@@ -122,13 +77,6 @@ export interface Employee {
 	user_avatar_url?: string | null;
 	role?: string;
 	role_name?: string;
-	branch?: string;
-	branch_name?: string;
-	branch_code?: string;
-	department?: string;
-	department_name?: string;
-	designation?: string;
-	designation_title?: string;
 	reporting_manager?: string;
 	reporting_manager_name?: string;
 	phone?: string;
@@ -201,13 +149,6 @@ export interface MemberListItem {
 	user_avatar_url?: string | null;
 	role?: string;
 	role_name?: string;
-	branch?: string;
-	branch_name?: string;
-	branch_code?: string;
-	department?: string;
-	department_name?: string;
-	designation?: string;
-	designation_title?: string;
 	employment_type: string;
 	status: string;
 	joining_date?: string;

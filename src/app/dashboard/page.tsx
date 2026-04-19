@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { apiFetch } from '@/lib/api';
 import {
-	parseListResponse, MemberSchema, RoleSchema, BranchSchema,
+	parseListResponse, MemberSchema, RoleSchema,
 } from '@/lib/schemas';
 
 interface Member {
@@ -95,20 +95,9 @@ export default function DashboardPage() {
 	// First-time setup redirect
 	useEffect(() => {
 		if (!selectedOrg) return;
-		(async () => {
-			const branchRes = await apiFetch(`/organizations/${selectedOrg.id}/branches/`, {
-				orgId: selectedOrg.id,
-			});
-			if (branchRes.ok) {
-				const branchData = await branchRes.json().catch(() => ({ data: [] }));
-				const branchList = parseListResponse(BranchSchema, branchData);
-				if (branchList.length === 0 && !localStorage.getItem('setup_complete')) {
-					router.push('/setup');
-					return;
-				}
-				localStorage.setItem('setup_complete', 'true');
-			}
-		})();
+		if (!localStorage.getItem('setup_complete')) {
+			router.push('/setup');
+		}
 	}, [selectedOrg?.id, router]);
 
 	useEffect(() => {

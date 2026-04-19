@@ -168,9 +168,6 @@ export default function EmployeeDetailPage() {
 						<CardContent className="space-y-3 text-sm">
 							<InfoRow label="Email" value={employee.user_email} />
 							<InfoRow label="Role" value={employee.role_name} />
-							<InfoRow label="Branch" value={employee.branch_name} />
-							<InfoRow label="Department" value={employee.department_name} />
-							<InfoRow label="Designation" value={employee.designation_title} />
 							<InfoRow label="Employment Type" value={employee.employment_type} />
 							<InfoRow label="Joining Date" value={employee.joining_date} />
 						</CardContent>

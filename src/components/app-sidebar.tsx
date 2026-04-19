@@ -11,8 +11,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import {
 	LayoutDashboard,
 	Briefcase,
-	GitBranch,
-	Layers,
 	Receipt,
 	Clock,
 	Shield,
@@ -61,24 +59,6 @@ function buildNavGroups(): NavGroup[] {
 					iconBg: 'bg-blue-100 dark:bg-blue-950',
 					permission: (p, perms) =>
 						p <= 2 || perms.some((k) => k.startsWith('member.')),
-				},
-				{
-					title: 'Branches',
-					href: '/branches',
-					icon: GitBranch,
-					iconColor: 'text-green-600 dark:text-green-400',
-					iconBg: 'bg-green-100 dark:bg-green-950',
-					permission: (p, perms) =>
-						p <= 2 || perms.some((k) => k.startsWith('branch.')),
-				},
-				{
-					title: 'Departments',
-					href: '/departments',
-					icon: Layers,
-					iconColor: 'text-purple-600 dark:text-purple-400',
-					iconBg: 'bg-purple-100 dark:bg-purple-950',
-					permission: (p, perms) =>
-						p <= 2 || perms.some((k) => k.startsWith('department.')),
 				},
 			],
 		},

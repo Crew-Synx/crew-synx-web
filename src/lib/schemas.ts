@@ -64,32 +64,6 @@ export const OrganizationSchema = z.object({
 	avatar_url: z.string().nullable().optional(),
 }).passthrough();
 
-export const BranchSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	code: z.string(),
-	is_head_office: z.boolean(),
-	is_active: z.boolean(),
-	employee_count: z.number(),
-	created_at: z.string(),
-}).passthrough();
-
-export const DepartmentSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	is_active: z.boolean(),
-	employee_count: z.number(),
-	created_at: z.string(),
-}).passthrough();
-
-export const DesignationSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-	level: z.number(),
-	is_active: z.boolean(),
-	created_at: z.string(),
-}).passthrough();
-
 export const RoleSchema = z.object({
 	id: z.string(),
 	name: z.string(),
@@ -120,13 +94,6 @@ export const EmployeeSchema = z.object({
 	encrypted_qr_payload: z.string().nullish().transform(v => v ?? undefined),
 	role: z.string().nullish().transform(v => v ?? undefined),
 	role_name: z.string().nullish().transform(v => v ?? undefined),
-	branch: z.string().nullish().transform(v => v ?? undefined),
-	branch_name: z.string().nullish().transform(v => v ?? undefined),
-	branch_code: z.string().nullish().transform(v => v ?? undefined),
-	department: z.string().nullish().transform(v => v ?? undefined),
-	department_name: z.string().nullish().transform(v => v ?? undefined),
-	designation: z.string().nullish().transform(v => v ?? undefined),
-	designation_title: z.string().nullish().transform(v => v ?? undefined),
 	phone: z.string().nullish().transform(v => v ?? undefined),
 	employment_type: z.string().optional().default(''),
 	status: z.string().optional().default('active'),
@@ -188,9 +155,6 @@ export const NotificationPrefSchema = z.object({
 export const OrgListResponse = apiListEnvelope(OrganizationSchema);
 export const MemberListResponse = apiListEnvelope(MemberSchema);
 export const RoleListResponse = apiListEnvelope(RoleSchema);
-export const BranchListResponse = apiListEnvelope(BranchSchema);
-export const DepartmentListResponse = apiListEnvelope(DepartmentSchema);
-export const DesignationListResponse = apiListEnvelope(DesignationSchema);
 export const EmployeeListResponse = apiListEnvelope(EmployeeSchema);
 export const AttendanceListResponse = apiListEnvelope(AttendanceSchema);
 export const RemoteRequestListResponse = apiListEnvelope(RemoteCheckInRequestSchema);

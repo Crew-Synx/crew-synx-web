@@ -10,9 +10,9 @@ import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Loader2, ArrowLeft, Plus, Check } from 'lucide-react';
-import type { Organization, Branch, Department, Designation, Role } from '@/lib/types';
+import type { Organization, Role } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
-import { parseListResponse, BranchSchema, DepartmentSchema, DesignationSchema, RoleSchema } from '@/lib/schemas';
+import { parseListResponse, RoleSchema } from '@/lib/schemas';
 
 const SESSION_KEY = 'emp_new_form';
 
@@ -39,14 +39,11 @@ function OnboardEmployeeInner() {
 	const [step, setStep] = useState(0);
 	const [error, setError] = useState('');
 
-	const [branches, setBranches] = useState<Branch[]>([]);
-	const [departments, setDepartments] = useState<Department[]>([]);
-	const [designations, setDesignations] = useState<Designation[]>([]);
 	const [roles, setRoles] = useState<Role[]>([]);
 
 	const [form, setForm] = useState({
 		email: '', first_name: '', last_name: '',
-		role: '', branch: '', department: '', designation: '',
+		role: '',
 		employment_type: 'full_time', joining_date: '',
 	});
 
@@ -89,15 +86,9 @@ function OnboardEmployeeInner() {
 	async function loadLookups(orgId: string, reloadType?: string, newId?: string) {
 		setLoading(true);
 		try {
-			const [brRes, deptRes, desRes, roleRes] = await Promise.all([
-				apiFetch(`/organizations/${orgId}/branches/`, { orgId }),
-				apiFetch(`/organizations/${orgId}/departments/`, { orgId }),
-				apiFetch(`/organizations/${orgId}/designations/`, { orgId }),
+			const [roleRes] = await Promise.all([
 				apiFetch(`/roles/`, { orgId }),
 			]);
-			if (brRes.ok) setBranches(parseListResponse(BranchSchema, await brRes.json().catch(() => ({ data: [] }))));
-			if (deptRes.ok) setDepartments(parseListResponse(DepartmentSchema, await deptRes.json().catch(() => ({ data: [] }))));
-			if (desRes.ok) setDesignations(parseListResponse(DesignationSchema, await desRes.json().catch(() => ({ data: [] }))));
 			if (roleRes.ok) setRoles(parseListResponse(RoleSchema, await roleRes.json().catch(() => ({ data: [] }))));
 
 			// Auto-select the newly created item
@@ -268,66 +259,6 @@ function OnboardEmployeeInner() {
 							</Select>
 						</div>
 
-						{/* Branch */}
-						<div>
-							<div className="flex items-center justify-between mb-1.5">
-								<Label className="text-sm font-medium">Branch *</Label>
-								<button
-									type="button"
-									onClick={() => navigateToCreate('/branches')}
-									className="flex items-center gap-0.5 text-xs text-primary hover:underline"
-								>
-									<Plus className="h-3 w-3" /> New
-								</button>
-							</div>
-							<Select value={form.branch} onValueChange={v => set('branch', v)}>
-								<SelectTrigger><SelectValue placeholder="Select a branch" /></SelectTrigger>
-								<SelectContent>
-									{branches.map(b => <SelectItem key={b.id} value={b.id}>{b.name} ({b.code})</SelectItem>)}
-								</SelectContent>
-							</Select>
-						</div>
-
-						{/* Department + Designation (optional) */}
-						<div className="grid grid-cols-2 gap-3">
-							<div>
-								<div className="flex items-center justify-between mb-1.5">
-									<Label className="text-sm font-medium text-muted-foreground">Department</Label>
-									<button
-										type="button"
-										onClick={() => navigateToCreate('/departments')}
-										className="flex items-center gap-0.5 text-xs text-primary hover:underline"
-									>
-										<Plus className="h-3 w-3" />
-									</button>
-								</div>
-								<Select value={form.department} onValueChange={v => set('department', v)}>
-									<SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-									<SelectContent>
-										{departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-									</SelectContent>
-								</Select>
-							</div>
-							<div>
-								<div className="flex items-center justify-between mb-1.5">
-									<Label className="text-sm font-medium text-muted-foreground">Designation</Label>
-									<button
-										type="button"
-										onClick={() => navigateToCreate('/designations')}
-										className="flex items-center gap-0.5 text-xs text-primary hover:underline"
-									>
-										<Plus className="h-3 w-3" />
-									</button>
-								</div>
-								<Select value={form.designation} onValueChange={v => set('designation', v)}>
-									<SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-									<SelectContent>
-										{designations.map(d => <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>)}
-									</SelectContent>
-								</Select>
-							</div>
-						</div>
-
 						{/* Employment type chips */}
 						<div>
 							<Label className="text-sm font-medium text-muted-foreground">Employment type</Label>
@@ -366,7 +297,7 @@ function OnboardEmployeeInner() {
 							<Button
 								className="flex-1"
 								onClick={handleSubmit}
-								disabled={submitting || !form.role || !form.branch}
+								disabled={submitting || !form.role}
 							>
 								{submitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
 								Add Employee

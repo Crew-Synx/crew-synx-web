@@ -19,14 +19,11 @@ import { AppNavbar } from './app-navbar';
 const APP_ROUTE_PREFIXES = [
 	'/dashboard',
 	'/employees',
-	'/branches',
-	'/departments',
 	'/expenses',
 	'/attendance',
 	'/roles',
 	'/settings',
 	'/profile',
-	'/designations',
 	'/analytics',
 	'/chat',
 ];

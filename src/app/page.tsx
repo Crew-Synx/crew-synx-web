@@ -92,13 +92,13 @@ const stats = [
 ];
 
 export const metadata: Metadata = {
-	title: 'CrewSynx — Modern Workforce Management',
-	description: 'Manage your entire workforce — attendance, payroll, departments, and more — from one powerful platform.',
-	openGraph: {
-		title: 'CrewSynx — Modern Workforce Management',
-		description: 'Manage your entire workforce from one powerful platform.',
-		type: 'website',
-	},
+  title: 'CrewSynx — Modern Workforce Management',
+  description: 'Manage your entire workforce — attendance, payroll, roles, and more — from one powerful platform.',
+  openGraph: {
+    title: 'CrewSynx — Modern Workforce Management',
+    description: 'Manage your entire workforce from one powerful platform.',
+    type: 'website',
+  },
 };
 
 export default function Home() {
