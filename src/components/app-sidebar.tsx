@@ -110,7 +110,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 	const { userRole, sidebarCollapsed, setSidebarCollapsed } = useAppContext();
 
 	const priority = userRole?.priority ?? 99;
-	const perms = userRole?.permissions ?? [];
+	const perms = userRole?.access ? Object.keys(userRole.access) : [];
 	const navGroups = buildNavGroups();
 
 	const isActive = (href: string) => {

@@ -49,7 +49,7 @@ interface Role {
 	name: string;
 	priority: number;
 	is_system?: boolean;
-	permissions: string[];
+	access: Record<string, { level: 'admin' | 'write' | 'read' | 'hide'; label: string }>;
 }
 
 function getRoleIcon(roleName?: string) {
