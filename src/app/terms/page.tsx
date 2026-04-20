@@ -5,11 +5,13 @@ import { Footer } from '@/components/landing/footer';
 export const metadata: Metadata = {
 	title: 'Terms of Service | CrewSynx',
 	description:
-		'Terms governing the purchase and use of a CrewSynx perpetual software license.',
+		'Terms governing the purchase and use of a CrewSynx perpetual software license from Butterfly Instruments.',
 };
 
 const EFFECTIVE_DATE = '21 April 2026';
-const CONTACT_EMAIL = 'legal@crewsynx.com';
+const CONTACT_EMAIL = 'contact@butterflyinstruments.com';
+const COMPANY_NAME = 'Butterfly Instruments';
+const MAIN_SITE = 'https://butterflyinstruments.com';
 
 export default function TermsPage() {
 	return (
@@ -28,10 +30,10 @@ export default function TermsPage() {
 						<h2 className="text-xl font-semibold">1. Agreement</h2>
 						<p>
 							These Terms of Service (&ldquo;Terms&rdquo;) are a legal agreement between you or the
-							organisation you represent (&ldquo;Licensee&rdquo;, &ldquo;you&rdquo;) and CrewSynx
-							(&ldquo;we&rdquo;, &ldquo;us&rdquo;). By purchasing a license, downloading, installing,
-							or using CrewSynx software, you agree to be bound by these Terms. If you do not agree,
-							do not use the software.
+							organisation you represent (&ldquo;Licensee&rdquo;, &ldquo;you&rdquo;) and{' '}
+							{COMPANY_NAME} (&ldquo;we&rdquo;, &ldquo;us&rdquo;), the developer and publisher of CrewSynx.
+							By purchasing a license, downloading, installing, or using CrewSynx software, you agree
+							to be bound by these Terms. If you do not agree, do not use the software.
 						</p>
 					</section>
 
@@ -122,9 +124,9 @@ export default function TermsPage() {
 						<h2 className="text-xl font-semibold">8. Intellectual Property</h2>
 						<p>
 							CrewSynx and all associated software, documentation, trademarks, and materials are and
-							remain the intellectual property of CrewSynx. These Terms do not transfer any ownership
-							rights to you. Your perpetual license is a right to use, not an assignment of
-							ownership.
+							remain the intellectual property of {COMPANY_NAME}. These Terms do not transfer any
+							ownership rights to you. Your perpetual license is a right to use, not an assignment
+							of ownership.
 						</p>
 					</section>
 
@@ -151,11 +153,11 @@ export default function TermsPage() {
 					<section>
 						<h2 className="text-xl font-semibold">11. Limitation of Liability</h2>
 						<p>
-							To the maximum extent permitted by applicable law, in no event shall CrewSynx be liable
-							for any indirect, incidental, special, consequential, or punitive damages, including
-							loss of profits, data, or business interruption, arising out of or in connection with
-							these Terms or your use of the software, even if advised of the possibility of such
-							damages.
+							To the maximum extent permitted by applicable law, in no event shall {COMPANY_NAME} be
+							liable for any indirect, incidental, special, consequential, or punitive damages,
+							including loss of profits, data, or business interruption, arising out of or in
+							connection with these Terms or your use of the software, even if advised of the
+							possibility of such damages.
 						</p>
 						<p className="mt-3">
 							Our total aggregate liability for any claim under these Terms shall not exceed the
@@ -166,10 +168,10 @@ export default function TermsPage() {
 					<section>
 						<h2 className="text-xl font-semibold">12. Indemnification</h2>
 						<p>
-							You agree to indemnify and hold harmless CrewSynx and its personnel from any claims,
-							damages, or expenses (including reasonable legal fees) arising from your use of the
-							software in violation of these Terms, your deployment environment, or your processing
-							of third-party personal data within your instance.
+							You agree to indemnify and hold harmless {COMPANY_NAME} and its personnel from any
+							claims, damages, or expenses (including reasonable legal fees) arising from your use
+							of the software in violation of these Terms, your deployment environment, or your
+							processing of third-party personal data within your instance.
 						</p>
 					</section>
 
@@ -196,14 +198,16 @@ export default function TermsPage() {
 					<section>
 						<h2 className="text-xl font-semibold">15. Contact</h2>
 						<p>
-							For legal enquiries, email us at{' '}
+							For legal enquiries, contact {COMPANY_NAME} at{' '}
 							<a
 								href={`mailto:${CONTACT_EMAIL}`}
 								className="text-primary underline underline-offset-4"
 							>
 								{CONTACT_EMAIL}
 							</a>
-							. For pricing and general enquiries, use the{' '}
+							{' '}or visit{' '}
+							<a href={MAIN_SITE} className="text-primary underline underline-offset-4">{MAIN_SITE}</a>.
+							For pricing and product enquiries, use the{' '}
 							<a href="/pricing" className="text-primary underline underline-offset-4">
 								contact form
 							</a>

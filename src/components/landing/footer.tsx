@@ -48,7 +48,7 @@ export function Footer() {
 
 				<div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-8 sm:flex-row">
 					<p className="text-sm text-muted-foreground">
-						&copy; {new Date().getFullYear()} CrewSynx. All rights reserved.
+						&copy; {new Date().getFullYear()} Butterfly Instruments. All rights reserved.
 					</p>
 					<div className="flex gap-6">
 						<Link href="#" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Twitter">

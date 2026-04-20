@@ -5,11 +5,14 @@ import { Footer } from '@/components/landing/footer';
 export const metadata: Metadata = {
 	title: 'Privacy Policy | CrewSynx',
 	description:
-		'How CrewSynx collects, uses, and protects information on the crewsynx.com website and contact form.',
+		'How Butterfly Instruments collects, uses, and protects information on the CrewSynx website and contact form.',
 };
 
 const EFFECTIVE_DATE = '21 April 2026';
-const CONTACT_EMAIL = 'privacy@crewsynx.com';
+const CONTACT_EMAIL = 'contact@butterflyinstruments.com';
+const COMPANY_NAME = 'Butterfly Instruments';
+const MAIN_SITE = 'https://butterflyinstruments.com';
+const PRODUCT_SITE = 'https://crewsynx.butterflyinstruments.com';
 
 export default function PrivacyPage() {
 	return (
@@ -27,12 +30,16 @@ export default function PrivacyPage() {
 					<section>
 						<h2 className="text-xl font-semibold">1. Who We Are</h2>
 						<p>
-							CrewSynx (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a software product that provides
-							self-hosted workforce management tools. We distribute CrewSynx as a perpetual license;
-							customers deploy and operate it on their own infrastructure. This Privacy Policy covers
-							only the <strong>CrewSynx website and contact form</strong> — it does not govern data
-							processed inside a self-hosted CrewSynx instance, which is entirely the responsibility
-							of the deploying organisation.
+							{COMPANY_NAME} (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is the company behind
+							CrewSynx, a self-hosted workforce management platform available at{' '}
+							<a href={PRODUCT_SITE} className="text-primary underline underline-offset-4">{PRODUCT_SITE}</a>.
+							Our main website is{' '}
+							<a href={MAIN_SITE} className="text-primary underline underline-offset-4">{MAIN_SITE}</a>.
+							We distribute CrewSynx as a perpetual license; customers deploy and operate it on their
+							own infrastructure. This Privacy Policy covers only the{' '}
+							<strong>CrewSynx website and contact form</strong> — it does not govern data processed
+							inside a self-hosted CrewSynx instance, which is entirely the responsibility of the
+							deploying organisation.
 						</p>
 						<p className="mt-3">
 							For questions, contact us at{' '}
@@ -181,10 +188,13 @@ export default function PrivacyPage() {
 					<section>
 						<h2 className="text-xl font-semibold">11. Contact</h2>
 						<p>
-							If you have questions or concerns about this Privacy Policy, please contact us at{' '}
+							If you have questions or concerns about this Privacy Policy, please contact{' '}
+							{COMPANY_NAME} at{' '}
 							<a href={`mailto:${CONTACT_EMAIL}`} className="text-primary underline underline-offset-4">
 								{CONTACT_EMAIL}
-							</a>.
+							</a>
+							{' '}or visit{' '}
+							<a href={MAIN_SITE} className="text-primary underline underline-offset-4">{MAIN_SITE}</a>.
 						</p>
 					</section>
 				</div>
