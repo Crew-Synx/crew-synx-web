@@ -5,8 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Badge } from '@/components/ui/badge';
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -263,13 +262,11 @@ function RolesInner() {
 								<DialogDescription>Give it a name. You can set access levels after.</DialogDescription>
 							</DialogHeader>
 							<div className="py-4">
-								<Label>Role Name</Label>
-								<Input
+								<FloatingLabelInput
+									label="Role Name"
 									value={newRoleName}
 									onChange={e => setNewRoleName(e.target.value)}
-									placeholder="e.g. Team Lead"
 									autoFocus
-									className="mt-1"
 									onKeyDown={e => { if (e.key === 'Enter') handleCreate(); }}
 								/>
 							</div>
@@ -363,20 +360,17 @@ function RolesInner() {
 
 					<div className="space-y-5 py-2">
 						{/* Role name */}
-						<div>
-							<Label>Role Name</Label>
-							<Input
-								value={editName}
-								onChange={e => setEditName(e.target.value)}
-								disabled={editRole?.name === 'Owner'}
-								className="mt-1"
-							/>
-						</div>
+						<FloatingLabelInput
+							label="Role Name"
+							value={editName}
+							onChange={e => setEditName(e.target.value)}
+							disabled={editRole?.name === 'Owner'}
+						/>
 
 						{/* Access table */}
 						{Object.keys(editAccess).length > 0 && (
 							<div>
-								<Label className="mb-3 block">Module Access</Label>
+								<p className="text-sm font-medium mb-3">Module Access</p>
 								<AccessTable
 									access={editAccess}
 									onChange={handleAccessChange}

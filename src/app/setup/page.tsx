@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Badge } from '@/components/ui/badge';
 import {
 	Loader2, Shield,
@@ -318,8 +318,8 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 			{/* Add custom role */}
 			{creating ? (
 				<div className="flex items-center gap-2">
-					<Input
-						placeholder="Custom role name"
+					<FloatingLabelInput
+						label="Custom role name"
 						value={newRole}
 						onChange={e => setNewRole(e.target.value)}
 						onKeyDown={e => e.key === 'Enter' && handleCreateCustom()}
