@@ -17,6 +17,7 @@ import {
 	Settings,
 	ChevronLeft,
 	ChevronRight,
+	BookOpen,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 
@@ -90,7 +91,7 @@ function buildNavGroups(): NavGroup[] {
 					icon: Shield,
 					iconColor: 'text-indigo-600 dark:text-indigo-400',
 					iconBg: 'bg-indigo-100 dark:bg-indigo-950',
-					permission: (p) => p <= 1,
+					permission: (p) => p <= 2,
 				},
 				{
 					title: 'Settings',
@@ -203,6 +204,37 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 					})}
 				</TooltipProvider>
 			</nav>
+
+			{/* Docs — pinned to bottom with divider */}
+			<div className="shrink-0 border-t border-border/50 px-2 py-2">
+				<TooltipProvider delayDuration={0}>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Link
+								href="/docs"
+								onClick={onNavigate}
+								className={cn(
+									'flex items-center gap-2.5 rounded-lg py-2 text-sm transition-colors',
+									sidebarCollapsed ? 'justify-center px-2' : 'px-3',
+									isActive('/docs')
+										? 'bg-accent text-accent-foreground'
+										: 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+								)}
+							>
+								<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-950">
+									<BookOpen className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+								</span>
+								{!sidebarCollapsed && (
+									<span className="font-medium leading-none">Docs</span>
+								)}
+							</Link>
+						</TooltipTrigger>
+						{sidebarCollapsed && (
+							<TooltipContent side="right">Documentation</TooltipContent>
+						)}
+					</Tooltip>
+				</TooltipProvider>
+			</div>
 
 			{/* Expand button when collapsed */}
 			{sidebarCollapsed && (
