@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import Link from 'next/link';
 
 const navLinks = [
 	{ label: 'Features', href: '#features' },
-	{ label: 'Downloads', href: '#downloads' },
 	{ label: 'Contact & Pricing', href: '/pricing' },
 ];
 
@@ -17,11 +15,11 @@ export function Navbar() {
 
 	return (
 		<header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
-			<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+			<div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6 lg:px-8">
 				<Logo size={32} />
 
-				{/* Desktop nav */}
-				<nav className="hidden items-center gap-8 md:flex">
+				{/* Desktop nav — absolutely centered */}
+				<nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 md:flex">
 					{navLinks.map((link) => (
 						<Link
 							key={link.href}
@@ -32,12 +30,6 @@ export function Navbar() {
 						</Link>
 					))}
 				</nav>
-
-				<div className="hidden items-center gap-3 md:flex">
-					<Button variant="ghost" size="sm" asChild>
-						<Link href="/auth/login">Log in</Link>
-					</Button>
-				</div>
 
 				{/* Mobile toggle */}
 				<button
@@ -64,12 +56,6 @@ export function Navbar() {
 							</Link>
 						))}
 					</nav>
-					<div className="mt-4 flex flex-col gap-2">
-						<Button variant="ghost" size="sm" asChild>
-							<Link href="/auth/login">Log in</Link>
-						</Button>
-
-					</div>
 				</div>
 			)}
 		</header>

@@ -17,10 +17,6 @@ import {
   Wrench,
   CheckCircle2,
   ArrowRight,
-  Download,
-  Monitor,
-  Smartphone,
-  Apple,
   Mail,
 } from 'lucide-react';
 
@@ -236,65 +232,6 @@ export default function Home() {
                 <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Downloads ────────────────────────────────────────────── */}
-      <section id="downloads" className="scroll-mt-16 border-t border-border/50">
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge variant="outline" className="mb-4">Downloads</Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Available on your platform
-            </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Native client apps for the best experience. More platforms coming.
-            </p>
-          </div>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mx-auto max-w-4xl">
-            <Card className="border-border/50 transition-shadow hover:shadow-md">
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-                  <Apple className="h-7 w-7 text-primary" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">macOS</h3>
-                <p className="mt-1 text-sm text-muted-foreground">macOS 12 Monterey or later</p>
-                <Button className="mt-4 w-full" asChild>
-                  <a href="https://pub-e1a3af3b0acd49b389d9ea16ce02de48.r2.dev/Downloads/macos/CrewSynx.dmg">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download .dmg
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 border-dashed opacity-60">
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-muted">
-                  <Monitor className="h-7 w-7 text-muted-foreground" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">Windows</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Windows 10 or later</p>
-                <Button className="mt-4 w-full" variant="outline" disabled>
-                  Coming Soon
-                </Button>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 transition-shadow hover:shadow-md">
-              <CardContent className="pt-6 text-center">
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-                  <Smartphone className="h-7 w-7 text-primary" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">Android</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Android 6.0 or later</p>
-                <Button className="mt-4 w-full" asChild>
-                  <a href="https://pub-e1a3af3b0acd49b389d9ea16ce02de48.r2.dev/Downloads/android/CrewSynx.apk">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download .apk
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>

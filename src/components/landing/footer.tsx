@@ -4,12 +4,14 @@ import { Logo } from '@/components/ui/logo';
 const footerLinks = {
 	Product: [
 		{ label: 'Features', href: '#features' },
-		{ label: 'Downloads', href: '#downloads' },
 		{ label: 'Contact & Pricing', href: '/pricing' },
 	],
 	Legal: [
 		{ label: 'Privacy Policy', href: '/privacy' },
 		{ label: 'Terms of Service', href: '/terms' },
+		{ label: 'Security & Compliance', href: '/security' },
+		{ label: 'Security Posture', href: '/security-posture' },
+		{ label: 'Data Processing Agreement', href: '/dpa' },
 	],
 };
 

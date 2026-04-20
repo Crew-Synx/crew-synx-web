@@ -23,11 +23,19 @@ const TEAM_SIZES = [
 	'500+',
 ];
 
+const PURPOSE_OPTIONS = [
+	{ value: 'download', label: 'Download CrewSynx' },
+	{ value: 'upgrade', label: 'Upgrade my version' },
+	{ value: 'issue', label: 'Issue with my version' },
+	{ value: 'new_license', label: 'Get a new license' },
+];
+
 interface FormFields {
 	name: string;
 	email: string;
 	company: string;
 	team_size: string;
+	purpose: string;
 	message: string;
 }
 
@@ -35,6 +43,7 @@ interface FieldErrors {
 	name?: string;
 	email?: string;
 	company?: string;
+	purpose?: string;
 	message?: string;
 }
 
@@ -44,6 +53,7 @@ export function ContactForm() {
 		email: '',
 		company: '',
 		team_size: '',
+		purpose: '',
 		message: '',
 	});
 	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -65,6 +75,15 @@ export function ContactForm() {
 		e.preventDefault();
 		setServerError(null);
 		setFieldErrors({});
+
+		// Client-side validation for select fields not captured by HTML required
+		const clientErrors: FieldErrors = {};
+		if (!fields.purpose) clientErrors.purpose = 'Please select a purpose.';
+		if (Object.keys(clientErrors).length > 0) {
+			setFieldErrors(clientErrors);
+			return;
+		}
+
 		setSubmitting(true);
 
 		try {
@@ -197,16 +216,57 @@ export function ContactForm() {
 				</div>
 			</div>
 
+			{/* Purpose */}
+			<div className="space-y-2">
+				<Label htmlFor="purpose">
+					Purpose <span className="text-destructive">*</span>
+				</Label>
+				<Select
+					value={fields.purpose}
+					onValueChange={(val) => {
+						setFields((prev) => ({ ...prev, purpose: val }));
+						if (fieldErrors.purpose) {
+							setFieldErrors((prev) => ({ ...prev, purpose: undefined }));
+						}
+					}}
+					disabled={submitting}
+				>
+					<SelectTrigger id="purpose" aria-invalid={!!fieldErrors.purpose}>
+						<SelectValue placeholder="What can we help you with?" />
+					</SelectTrigger>
+					<SelectContent>
+						{PURPOSE_OPTIONS.map((opt) => (
+							<SelectItem key={opt.value} value={opt.value}>
+								{opt.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				{fieldErrors.purpose && (
+					<p className="text-sm text-destructive">{fieldErrors.purpose}</p>
+				)}
+			</div>
+
 			{/* Message */}
 			<div className="space-y-2">
 				<Label htmlFor="message">
-					Message / Custom Requests <span className="text-destructive">*</span>
+					Message <span className="text-destructive">*</span>
 				</Label>
 				<Textarea
 					id="message"
 					name="message"
 					rows={6}
-					placeholder="Tell us about your deployment needs, custom feature requests, questions about licensing, or anything else you'd like to discuss."
+					placeholder={
+						fields.purpose === 'download'
+							? 'Let us know your platform (macOS, Windows, Android, iOS) and any other details.'
+							: fields.purpose === 'upgrade'
+								? 'Tell us your current version and what you would like to upgrade to.'
+								: fields.purpose === 'issue'
+									? 'Describe the issue you are experiencing, including your version and steps to reproduce.'
+									: fields.purpose === 'new_license'
+										? 'Tell us about your team size, deployment needs, and any custom feature requirements.'
+										: 'Tell us about your requirements, deployment needs, or anything else you would like to discuss.'
+					}
 					value={fields.message}
 					onChange={handleChange}
 					disabled={submitting}
@@ -230,6 +290,12 @@ export function ContactForm() {
 						<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 						Sending…
 					</>
+				) : fields.purpose === 'download' ? (
+					'Request Download'
+				) : fields.purpose === 'upgrade' ? (
+					'Request Upgrade'
+				) : fields.purpose === 'issue' ? (
+					'Report Issue'
 				) : (
 					'Send Inquiry'
 				)}
