@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2 } from 'lucide-react';
@@ -94,58 +93,50 @@ export default function RegisterForm() {
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
           )}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName" className="font-semibold">First Name</Label>
-              <Input
-                id="firstName"
-                name="firstName"
-                required
-                value={formData.firstName}
-                onChange={handleInputChange}
-                className="w-full p-3 bg-muted/50"
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName" className="font-semibold">Last Name</Label>
-              <Input
-                id="lastName"
-                name="lastName"
-                required
-                value={formData.lastName}
-                onChange={handleInputChange}
-                className="w-full p-3 bg-muted/50"
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="font-semibold">Email address</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
+            <FloatingLabelInput
+              id="firstName"
+              label="First Name"
+              name="firstName"
               required
-              value={formData.email}
+              value={formData.firstName}
               onChange={handleInputChange}
-              className="w-full p-3 bg-muted/50"
+              className="bg-muted/50"
+              disabled={isLoading}
+            />
+            <FloatingLabelInput
+              id="lastName"
+              label="Last Name"
+              name="lastName"
+              required
+              value={formData.lastName}
+              onChange={handleInputChange}
+              className="bg-muted/50"
               disabled={isLoading}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="company" className="font-semibold">Organization Name</Label>
-            <Input
-              id="company"
-              name="company"
-              required
-              value={formData.company}
-              onChange={handleInputChange}
-              className="w-full p-3 bg-muted/50"
-              disabled={isLoading}
-            />
-          </div>
+          <FloatingLabelInput
+            id="email"
+            label="Email address"
+            name="email"
+            type="email"
+            required
+            value={formData.email}
+            onChange={handleInputChange}
+            className="bg-muted/50"
+            disabled={isLoading}
+          />
+
+          <FloatingLabelInput
+            id="company"
+            label="Organization Name"
+            name="company"
+            required
+            value={formData.company}
+            onChange={handleInputChange}
+            className="bg-muted/50"
+            disabled={isLoading}
+          />
 
           <div className="flex items-center space-x-2">
             <Checkbox

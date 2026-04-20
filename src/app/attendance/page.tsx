@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { FloatingLabelInput, FloatingLabelTextarea } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -360,7 +359,8 @@ export default function AttendancePage() {
 					{/* ─── Records Tab ─────────────────────────────────── */}
 					<TabsContent value="records" className="space-y-4">
 						<div className="flex items-center gap-3">
-							<Input
+							<FloatingLabelInput
+								label="Month"
 								type="month"
 								value={selectedMonth}
 								onChange={(e) => setSelectedMonth(e.target.value)}
@@ -403,32 +403,32 @@ export default function AttendancePage() {
 
 								<Card>
 									<div className="overflow-x-auto">
-									<Table>
-										<TableHeader>
-											<TableRow>
-												<TableHead>Date</TableHead>
-												<TableHead>Name</TableHead>
-												<TableHead>Status</TableHead>
-												<TableHead>Method</TableHead>
-												<TableHead>Check In</TableHead>
-												<TableHead>Check Out</TableHead>
-												<TableHead>Notes</TableHead>
-											</TableRow>
-										</TableHeader>
-										<TableBody>
-											{records.map(r => (
-												<TableRow key={r.id}>
-													<TableCell className="font-medium">{r.date}</TableCell>
-													<TableCell>{r.user_name}</TableCell>
-													<TableCell>{statusBadge(r.status)}</TableCell>
-													<TableCell className="text-xs text-muted-foreground">{checkInMethodLabel(r.check_in_method)}</TableCell>
-													<TableCell>{r.check_in_time || '-'}</TableCell>
-													<TableCell>{r.check_out_time || '-'}</TableCell>
-													<TableCell className="text-xs text-muted-foreground max-w-32 truncate">{r.notes || ''}</TableCell>
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead>Date</TableHead>
+													<TableHead>Name</TableHead>
+													<TableHead>Status</TableHead>
+													<TableHead>Method</TableHead>
+													<TableHead>Check In</TableHead>
+													<TableHead>Check Out</TableHead>
+													<TableHead>Notes</TableHead>
 												</TableRow>
-											))}
-										</TableBody>
-									</Table>
+											</TableHeader>
+											<TableBody>
+												{records.map(r => (
+													<TableRow key={r.id}>
+														<TableCell className="font-medium">{r.date}</TableCell>
+														<TableCell>{r.user_name}</TableCell>
+														<TableCell>{statusBadge(r.status)}</TableCell>
+														<TableCell className="text-xs text-muted-foreground">{checkInMethodLabel(r.check_in_method)}</TableCell>
+														<TableCell>{r.check_in_time || '-'}</TableCell>
+														<TableCell>{r.check_out_time || '-'}</TableCell>
+														<TableCell className="text-xs text-muted-foreground max-w-32 truncate">{r.notes || ''}</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
 									</div>
 								</Card>
 							</>
@@ -492,12 +492,12 @@ export default function AttendancePage() {
 
 								{/* Manual token input */}
 								<div className="border-t pt-4 space-y-3">
-									<Label className="text-sm text-muted-foreground">Or enter QR token manually</Label>
+									<p className="text-sm text-muted-foreground">Or enter QR token manually</p>
 									<div className="flex gap-2">
-										<Input
+										<FloatingLabelInput
+											label="Paste employee QR token"
 											value={manualToken}
 											onChange={(e) => setManualToken(e.target.value)}
-											placeholder="Paste employee QR token"
 											className="flex-1"
 										/>
 										<Button
@@ -581,46 +581,46 @@ export default function AttendancePage() {
 						) : (
 							<Card>
 								<div className="overflow-x-auto">
-								<Table>
-									<TableHeader>
-										<TableRow>
-											<TableHead>Date</TableHead>
-											<TableHead>Employee</TableHead>
-											<TableHead>Reason</TableHead>
-											<TableHead>Location</TableHead>
-											<TableHead>Status</TableHead>
-											<TableHead>Reviewed By</TableHead>
-											<TableHead>Actions</TableHead>
-										</TableRow>
-									</TableHeader>
-									<TableBody>
-										{remoteRequests.map(req => (
-											<TableRow key={req.id}>
-												<TableCell className="font-medium">{req.date}</TableCell>
-												<TableCell>{req.user_name}</TableCell>
-												<TableCell className="max-w-48 truncate">{req.reason}</TableCell>
-												<TableCell className="text-xs text-muted-foreground max-w-32 truncate">{req.location_description || '-'}</TableCell>
-												<TableCell>{statusBadge(req.status)}</TableCell>
-												<TableCell className="text-xs text-muted-foreground">{req.reviewer_name || '-'}</TableCell>
-												<TableCell>
-													{req.status === 'pending' && (
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() => {
-																setReviewRequest(req);
-																setReviewNote('');
-																setReviewOpen(true);
-															}}
-														>
-															Review
-														</Button>
-													)}
-												</TableCell>
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead>Date</TableHead>
+												<TableHead>Employee</TableHead>
+												<TableHead>Reason</TableHead>
+												<TableHead>Location</TableHead>
+												<TableHead>Status</TableHead>
+												<TableHead>Reviewed By</TableHead>
+												<TableHead>Actions</TableHead>
 											</TableRow>
-										))}
-									</TableBody>
-								</Table>
+										</TableHeader>
+										<TableBody>
+											{remoteRequests.map(req => (
+												<TableRow key={req.id}>
+													<TableCell className="font-medium">{req.date}</TableCell>
+													<TableCell>{req.user_name}</TableCell>
+													<TableCell className="max-w-48 truncate">{req.reason}</TableCell>
+													<TableCell className="text-xs text-muted-foreground max-w-32 truncate">{req.location_description || '-'}</TableCell>
+													<TableCell>{statusBadge(req.status)}</TableCell>
+													<TableCell className="text-xs text-muted-foreground">{req.reviewer_name || '-'}</TableCell>
+													<TableCell>
+														{req.status === 'pending' && (
+															<Button
+																variant="outline"
+																size="sm"
+																onClick={() => {
+																	setReviewRequest(req);
+																	setReviewNote('');
+																	setReviewOpen(true);
+																}}
+															>
+																Review
+															</Button>
+														)}
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
 								</div>
 							</Card>
 						)}
@@ -643,15 +643,12 @@ export default function AttendancePage() {
 									</DialogDescription>
 								</DialogHeader>
 								<div className="space-y-4 py-4">
-									<div className="space-y-2">
-										<Label htmlFor="reviewNote">Review note (optional)</Label>
-										<Textarea
-											id="reviewNote"
-											value={reviewNote}
-											onChange={(e) => setReviewNote(e.target.value)}
-											placeholder="Optional note..."
-										/>
-									</div>
+									<FloatingLabelTextarea
+										id="reviewNote"
+										label="Review note (optional)"
+										value={reviewNote}
+										onChange={(e) => setReviewNote(e.target.value)}
+									/>
 								</div>
 								<DialogFooter className="gap-2">
 									<Button

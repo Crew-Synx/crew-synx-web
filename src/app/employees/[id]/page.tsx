@@ -5,8 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -252,18 +251,9 @@ export default function EmployeeDetailPage() {
 						<CardContent className="space-y-3 text-sm">
 							{editing ? (
 								<>
-									<div>
-										<Label className="text-xs">Name</Label>
-										<Input value={editForm.emergency_contact_name} onChange={e => setEditForm(f => ({ ...f, emergency_contact_name: e.target.value }))} />
-									</div>
-									<div>
-										<Label className="text-xs">Phone</Label>
-										<Input value={editForm.emergency_contact_phone} onChange={e => setEditForm(f => ({ ...f, emergency_contact_phone: e.target.value }))} />
-									</div>
-									<div>
-										<Label className="text-xs">Relation</Label>
-										<Input value={editForm.emergency_contact_relation} onChange={e => setEditForm(f => ({ ...f, emergency_contact_relation: e.target.value }))} />
-									</div>
+									<FloatingLabelInput label="Name" value={editForm.emergency_contact_name} onChange={e => setEditForm(f => ({ ...f, emergency_contact_name: e.target.value }))} />
+									<FloatingLabelInput label="Phone" value={editForm.emergency_contact_phone} onChange={e => setEditForm(f => ({ ...f, emergency_contact_phone: e.target.value }))} />
+									<FloatingLabelInput label="Relation" value={editForm.emergency_contact_relation} onChange={e => setEditForm(f => ({ ...f, emergency_contact_relation: e.target.value }))} />
 								</>
 							) : (
 								<>

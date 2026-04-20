@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -80,21 +79,18 @@ export default function LoginForm() {
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
           )}
-          <div className="space-y-2">
-            <Label htmlFor="userId" className="font-semibold text-gray-700">Email</Label>
-            <Input
-              id="userId"
-              name="userId"
-              type="email"
-              autoComplete="email"
-              required
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="you@email.com"
-              className="w-full p-3 h-12 bg-muted/50"
-              disabled={isLoading}
-            />
-          </div>
+          <FloatingLabelInput
+            id="userId"
+            label="Email"
+            name="userId"
+            type="email"
+            autoComplete="email"
+            required
+            value={userId}
+            onChange={(e) => setUserId(e.target.value)}
+            className="bg-muted/50"
+            disabled={isLoading}
+          />
 
           <Button
             type="submit"

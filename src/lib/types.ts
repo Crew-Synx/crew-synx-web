@@ -4,6 +4,7 @@
 export const CHAT_PERMISSION_CATEGORIES = new Set(['room', 'chat', 'slash_command']);
 
 export interface Permission {
+	id: string;
 	key: string;
 	description: string;
 }
@@ -66,12 +67,6 @@ export interface Role {
 	priority: number;
 	is_system?: boolean;
 	access: Record<string, ModuleAccess>;
-}
-
-export interface Permission {
-	id: string;
-	key: string;
-	description: string;
 }
 
 // ─── Employee / Organization Member ─────────────────────────────────

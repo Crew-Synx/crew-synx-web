@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { FloatingLabelInput, FloatingLabelTextarea } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -223,73 +222,56 @@ export default function PaymentsPage() {
 									</p>
 								</div>
 
-								<div>
-									<Label>Title *</Label>
-									<Input
-										value={form.title}
-										onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-										placeholder={createType === 'client_payment' ? 'e.g. Invoice #1234 payment' : 'e.g. Client dinner'}
-									/>
-								</div>
-								<div>
-									<Label>Description</Label>
-									<Textarea
-										value={form.description}
-										onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-										rows={2}
-									/>
-								</div>
+								<FloatingLabelInput
+									label="Title *"
+									value={form.title}
+									onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+								/>
+								<FloatingLabelTextarea
+									label="Description"
+									value={form.description}
+									onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+									rows={2}
+								/>
 								<div className="grid grid-cols-2 gap-4">
-									<div>
-										<Label>Amount *</Label>
-										<Input
-											type="number"
-											step="0.01"
-											value={form.amount}
-											onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-										/>
-									</div>
-									<div>
-										<Label>Currency</Label>
-										<Input
-											value={form.currency}
-											onChange={e => setForm(f => ({ ...f, currency: e.target.value.toUpperCase() }))}
-											maxLength={3}
-										/>
-									</div>
-								</div>
-								<div>
-									<Label>Date *</Label>
-									<Input
-										type="date"
-										value={form.payment_date}
-										onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
+									<FloatingLabelInput
+										label="Amount *"
+										type="number"
+										step="0.01"
+										value={form.amount}
+										onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+									/>
+									<FloatingLabelInput
+										label="Currency"
+										value={form.currency}
+										onChange={e => setForm(f => ({ ...f, currency: e.target.value.toUpperCase() }))}
+										maxLength={3}
 									/>
 								</div>
+								<FloatingLabelInput
+									label="Date *"
+									type="date"
+									value={form.payment_date}
+									onChange={e => setForm(f => ({ ...f, payment_date: e.target.value }))}
+								/>
 								{/* Expense-only fields */}
 								{createType === 'expense' && (
 									<>
-										<div>
-											<Label>Vendor / Merchant</Label>
-											<Input
-												value={form.vendor_name}
-												onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))}
-												placeholder="e.g. Swiggy, Uber"
-											/>
-										</div>
-										<div>
-											<Label>Receipt / Invoice Number</Label>
-											<Input
-												value={form.receipt_number}
-												onChange={e => setForm(f => ({ ...f, receipt_number: e.target.value }))}
-												placeholder="e.g. INV-2024-001"
-											/>
-										</div>
+										<FloatingLabelInput
+											label="Vendor / Merchant"
+											value={form.vendor_name}
+											onChange={e => setForm(f => ({ ...f, vendor_name: e.target.value }))}
+										/>
+										<FloatingLabelInput
+											label="Receipt / Invoice Number"
+											value={form.receipt_number}
+											onChange={e => setForm(f => ({ ...f, receipt_number: e.target.value }))}
+										/>
 									</>
 								)}
 								<div>
-									<Label>Attach Receipt</Label>
-									<Input
+									<FloatingLabelInput
+										label="Attach Receipt"
 										type="file"
 										accept="image/jpeg,image/png,image/webp,application/pdf"
 										onChange={e => setReceiptFile(e.target.files?.[0] ?? null)}

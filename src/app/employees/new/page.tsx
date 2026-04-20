@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import {
 	Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -194,36 +194,24 @@ function OnboardEmployeeInner() {
 				{/* Step 0: Identity */}
 				{step === 0 && (
 					<div className="space-y-5">
-						<div>
-							<Label className="text-sm font-medium">Work email *</Label>
-							<Input
-								type="email"
-								className="mt-1.5"
-								value={form.email}
-								onChange={e => set('email', e.target.value)}
-								placeholder="name@company.com"
-								autoFocus
-							/>
-						</div>
+						<FloatingLabelInput
+							label="Work email *"
+							type="email"
+							value={form.email}
+							onChange={e => set('email', e.target.value)}
+							autoFocus
+						/>
 						<div className="grid grid-cols-2 gap-3">
-							<div>
-								<Label className="text-sm font-medium">First name *</Label>
-								<Input
-									className="mt-1.5"
-									value={form.first_name}
-									onChange={e => set('first_name', e.target.value)}
-									placeholder="Jane"
-								/>
-							</div>
-							<div>
-								<Label className="text-sm font-medium">Last name *</Label>
-								<Input
-									className="mt-1.5"
-									value={form.last_name}
-									onChange={e => set('last_name', e.target.value)}
-									placeholder="Smith"
-								/>
-							</div>
+							<FloatingLabelInput
+								label="First name *"
+								value={form.first_name}
+								onChange={e => set('first_name', e.target.value)}
+							/>
+							<FloatingLabelInput
+								label="Last name *"
+								value={form.last_name}
+								onChange={e => set('last_name', e.target.value)}
+							/>
 						</div>
 						<Button
 							className="w-full"
@@ -281,9 +269,8 @@ function OnboardEmployeeInner() {
 
 						{/* Joining date */}
 						<div>
-							<Label className="text-sm font-medium text-muted-foreground">Joining date</Label>
-							<Input
-								className="mt-1.5"
+							<FloatingLabelInput
+								label="Joining date"
 								type="date"
 								value={form.joining_date}
 								onChange={e => set('joining_date', e.target.value)}

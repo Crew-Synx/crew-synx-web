@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { LogoMark } from '@/components/ui/logo';
@@ -54,19 +53,15 @@ export default function OnboardingPage() {
 				</div>
 
 				<form className="space-y-4" onSubmit={handleCreateOrg}>
-					<div>
-						<Label htmlFor="orgName" className="text-sm font-medium">Organization name</Label>
-						<Input
-							id="orgName"
-							required
-							value={orgName}
-							onChange={(e) => setOrgName(e.target.value)}
-							placeholder="Acme Corp"
-							className="mt-1.5"
-							disabled={isLoading}
-							autoFocus
-						/>
-					</div>
+					<FloatingLabelInput
+						id="orgName"
+						label="Organization name"
+						required
+						value={orgName}
+						onChange={(e) => setOrgName(e.target.value)}
+						disabled={isLoading}
+						autoFocus
+					/>
 
 					{error && (
 						<p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>

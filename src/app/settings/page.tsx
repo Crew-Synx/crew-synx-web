@@ -6,7 +6,7 @@ import { useAppContext } from '@/components/app-shell';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -392,24 +392,21 @@ export default function SettingsPage() {
 								<Separator />
 
 								<div className="grid gap-4 sm:grid-cols-2">
-									<div className="space-y-2">
-										<Label htmlFor="name">Full Name</Label>
-										<Input
-											id="name"
-											value={name}
-											onChange={(e) => setName(e.target.value)}
-											placeholder="Your name"
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="email">Email</Label>
-										<Input
+									<FloatingLabelInput
+										id="name"
+										label="Full Name"
+										value={name}
+										onChange={(e) => setName(e.target.value)}
+									/>
+									<div>
+										<FloatingLabelInput
 											id="email"
+											label="Email"
 											value={profile?.email || ''}
 											disabled
 											className="opacity-60"
 										/>
-										<p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+										<p className="text-xs text-muted-foreground mt-1">Email cannot be changed.</p>
 									</div>
 								</div>
 
@@ -579,14 +576,12 @@ export default function SettingsPage() {
 									<CardContent className="space-y-4">
 										{selectedOrg ? (
 											<>
-												<div className="space-y-2">
-													<Label htmlFor="orgName">Name</Label>
-													<Input
-														id="orgName"
-														value={orgName}
-														onChange={(e) => setOrgName(e.target.value)}
-													/>
-												</div>
+												<FloatingLabelInput
+													id="orgName"
+													label="Organization Name"
+													value={orgName}
+													onChange={(e) => setOrgName(e.target.value)}
+												/>
 												<div className="flex flex-col gap-2">
 													{saveOrgError && (
 														<p className="text-sm text-destructive">{saveOrgError}</p>
@@ -754,14 +749,14 @@ export default function SettingsPage() {
 						</DialogDescription>
 					</DialogHeader>
 					<div className="space-y-3 py-2">
-						<Label htmlFor="delete-confirm">
+						<p className="text-sm text-muted-foreground">
 							Type <span className="font-mono font-semibold">{profile?.email}</span> to confirm
-						</Label>
-						<Input
+						</p>
+						<FloatingLabelInput
 							id="delete-confirm"
+							label="Type your email to confirm"
 							value={deleteAccountConfirm}
 							onChange={(e) => setDeleteAccountConfirm(e.target.value)}
-							placeholder="your@email.com"
 						/>
 						{deleteAccountError && (
 							<p className="text-sm text-destructive">{deleteAccountError}</p>
@@ -825,14 +820,14 @@ export default function SettingsPage() {
 								</div>
 							</div>
 						)}
-						<Label htmlFor="delete-org-confirm">
+						<p className="text-sm text-muted-foreground">
 							Type <span className="font-mono font-semibold">{deleteOrgTarget?.name}</span> to confirm
-						</Label>
-						<Input
+						</p>
+						<FloatingLabelInput
 							id="delete-org-confirm"
+							label="Type organization name to confirm"
 							value={deleteOrgConfirm}
 							onChange={(e) => setDeleteOrgConfirm(e.target.value)}
-							placeholder="Organization name"
 						/>
 						{deleteOrgError && (
 							<p className="text-sm text-destructive">{deleteOrgError}</p>
