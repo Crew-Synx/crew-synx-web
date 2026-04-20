@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+
 import {
 	Loader2, ArrowLeft, Pencil, Save, X,
 	Phone, Briefcase, CreditCard, Shield, QrCode,
@@ -199,27 +200,12 @@ export default function EmployeeDetailPage() {
 						<CardContent className="space-y-3 text-sm">
 							{editing ? (
 								<>
-									<div>
-										<Label className="text-xs">Phone</Label>
-										<Input value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
-									</div>
-									<div>
-										<Label className="text-xs">Address Line 1</Label>
-										<Input value={editForm.address_line1} onChange={e => setEditForm(f => ({ ...f, address_line1: e.target.value }))} />
-									</div>
-									<div>
-										<Label className="text-xs">Address Line 2</Label>
-										<Input value={editForm.address_line2} onChange={e => setEditForm(f => ({ ...f, address_line2: e.target.value }))} />
-									</div>
+									<FloatingLabelInput label="Phone" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} />
+									<FloatingLabelInput label="Address Line 1" value={editForm.address_line1} onChange={e => setEditForm(f => ({ ...f, address_line1: e.target.value }))} />
+									<FloatingLabelInput label="Address Line 2" value={editForm.address_line2} onChange={e => setEditForm(f => ({ ...f, address_line2: e.target.value }))} />
 									<div className="grid grid-cols-2 gap-2">
-										<div>
-											<Label className="text-xs">City</Label>
-											<Input value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))} />
-										</div>
-										<div>
-											<Label className="text-xs">State</Label>
-											<Input value={editForm.state} onChange={e => setEditForm(f => ({ ...f, state: e.target.value }))} />
-										</div>
+										<FloatingLabelInput label="City" value={editForm.city} onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))} />
+										<FloatingLabelInput label="State" value={editForm.state} onChange={e => setEditForm(f => ({ ...f, state: e.target.value }))} />
 									</div>
 								</>
 							) : (

@@ -6,15 +6,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FloatingLabelInput, FloatingLabelTextarea } from '@/components/ui/floating-label-input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import {
 	Dialog, DialogContent, DialogDescription, DialogFooter,
 	DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-	Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import {
 	Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -534,25 +530,19 @@ export default function AttendancePage() {
 											</DialogDescription>
 										</DialogHeader>
 										<div className="space-y-4 py-4">
-											<div className="space-y-2">
-												<Label htmlFor="reason">Reason *</Label>
-												<Textarea
-													id="reason"
-													value={remoteReason}
-													onChange={(e) => setRemoteReason(e.target.value)}
-													placeholder="e.g. Client site visit, working from home"
-													required
-												/>
-											</div>
-											<div className="space-y-2">
-												<Label htmlFor="location">Location description</Label>
-												<Input
-													id="location"
-													value={remoteLocation}
-													onChange={(e) => setRemoteLocation(e.target.value)}
-													placeholder="e.g. Client office, 123 Main St"
-												/>
-											</div>
+											<FloatingLabelTextarea
+												label="Reason *"
+												id="reason"
+												value={remoteReason}
+												onChange={(e) => setRemoteReason(e.target.value)}
+												required
+											/>
+											<FloatingLabelInput
+												label="Location description"
+												id="location"
+												value={remoteLocation}
+												onChange={(e) => setRemoteLocation(e.target.value)}
+											/>
 										</div>
 										<DialogFooter>
 											<Button type="button" variant="outline" onClick={() => setRemoteCreateOpen(false)}>
