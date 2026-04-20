@@ -29,15 +29,45 @@ interface RoleItem {
 	id: string;
 	name: string;
 	priority: number;
-	permissions?: string[];
+	access?: Record<string, ModuleAccess>;
+}
+
+type AccessLevel = 'admin' | 'write' | 'read' | 'hide';
+
+interface ModuleAccess {
+	level: AccessLevel;
+	label: string;
 }
 
 interface RoleTemplate {
 	name: string;
 	description: string;
 	priority: number;
-	permissions: string[];
+	access: Record<string, ModuleAccess>;
 	already_applied: boolean;
+}
+
+const LEVEL_BADGE: Record<AccessLevel, string> = {
+	admin: 'bg-violet-100 text-violet-700',
+	write: 'bg-blue-100 text-blue-700',
+	read: 'bg-emerald-100 text-emerald-700',
+	hide: 'bg-gray-100 text-gray-500',
+};
+
+function AccessSummaryBadges({ access }: { access: Record<string, ModuleAccess> }) {
+	const counts = { admin: 0, write: 0, read: 0 } as Record<AccessLevel, number>;
+	Object.values(access).forEach(m => {
+		if (m.level in counts) counts[m.level as keyof typeof counts]++;
+	});
+	return (
+		<div className="flex flex-wrap gap-1 mt-2">
+			{(Object.entries(counts) as [AccessLevel, number][]).filter(([, n]) => n > 0).map(([level, count]) => (
+				<span key={level} className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${LEVEL_BADGE[level]}`}>
+					{count} {level.charAt(0).toUpperCase() + level.slice(1)}
+				</span>
+			))}
+		</div>
+	);
 }
 
 /* ─── Main Page ──────────────────────────────────────────────────── */
@@ -236,7 +266,6 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 				<div className="space-y-2">
 					{roles.map(role => {
 						const isOwner = role.name === 'Owner';
-						const perms = role.permissions ?? [];
 						return (
 							<div
 								key={role.id}
@@ -249,18 +278,7 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 											<Badge variant="secondary" className="text-xs">you</Badge>
 										)}
 									</div>
-									{perms.length > 0 && (
-										<div className="flex flex-wrap gap-1 mt-2">
-											{perms.map(p => (
-												<span
-													key={p}
-													className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground font-mono"
-												>
-													{p}
-												</span>
-											))}
-										</div>
-									)}
+									{role.access && <AccessSummaryBadges access={role.access} />}
 								</div>
 								{!isOwner && (
 									<button
@@ -369,18 +387,7 @@ function TemplateModal({ open, onClose, templates, roles, orgId, onReload }: {
 								<div className="flex-1 min-w-0">
 									<p className="text-sm font-medium">{t.name}</p>
 									<p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-									{t.permissions.length > 0 && (
-										<div className="flex flex-wrap gap-1 mt-2">
-											{t.permissions.map(p => (
-												<span
-													key={p}
-													className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground font-mono"
-												>
-													{p}
-												</span>
-											))}
-										</div>
-									)}
+									{t.access && <AccessSummaryBadges access={t.access} />}
 								</div>
 								<div className="shrink-0 mt-0.5">
 									{applied ? (
