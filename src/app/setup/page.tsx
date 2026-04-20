@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,24 +47,68 @@ interface RoleTemplate {
 	already_applied: boolean;
 }
 
-const LEVEL_BADGE: Record<AccessLevel, string> = {
-	admin: 'bg-violet-100 text-violet-700',
-	write: 'bg-blue-100 text-blue-700',
-	read: 'bg-emerald-100 text-emerald-700',
-	hide: 'bg-gray-100 text-gray-500',
+const LEVEL_CONFIG: Record<AccessLevel, { label: string; badge: string; dot: string }> = {
+	admin: { label: 'Admin', badge: 'bg-violet-100 text-violet-700 hover:bg-violet-200', dot: 'bg-violet-500' },
+	write: { label: 'Write', badge: 'bg-blue-100 text-blue-700 hover:bg-blue-200', dot: 'bg-blue-500' },
+	read: { label: 'Read', badge: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200', dot: 'bg-emerald-500' },
+	hide: { label: 'Hide', badge: 'bg-gray-100 text-gray-500 hover:bg-gray-200', dot: 'bg-gray-400' },
 };
 
-function AccessSummaryBadges({ access }: { access: Record<string, ModuleAccess> }) {
-	const counts = { admin: 0, write: 0, read: 0 } as Record<AccessLevel, number>;
+function LevelTag({ level, modules }: { level: AccessLevel; modules: string[] }) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement>(null);
+	const cfg = LEVEL_CONFIG[level];
+
+	useEffect(() => {
+		if (!open) return;
+		function handle(e: MouseEvent) {
+			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+		}
+		document.addEventListener('mousedown', handle);
+		return () => document.removeEventListener('mousedown', handle);
+	}, [open]);
+
+	return (
+		<div ref={ref} className="relative inline-block">
+			<button
+				type="button"
+				onClick={() => setOpen(v => !v)}
+				className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-colors cursor-pointer ${cfg.badge}`}
+			>
+				<span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+				{modules.length} {cfg.label}
+				<svg className="h-3 w-3 opacity-60" viewBox="0 0 12 12" fill="none">
+					<path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			</button>
+			{open && (
+				<div className="absolute left-0 top-full mt-1 z-50 min-w-37.5 rounded-lg border bg-popover shadow-md py-1">
+					{modules.map(m => (
+						<div key={m} className="flex items-center gap-2 px-3 py-1.5 text-xs text-popover-foreground">
+							<span className={`h-1.5 w-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+							{m}
+						</div>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function AccessSummaryTags({ access }: { access: Record<string, ModuleAccess> }) {
+	const grouped: Partial<Record<AccessLevel, string[]>> = {};
 	Object.values(access).forEach(m => {
-		if (m.level in counts) counts[m.level as keyof typeof counts]++;
+		if (m.level === 'hide') return;
+		if (!grouped[m.level]) grouped[m.level] = [];
+		grouped[m.level]!.push(m.label);
 	});
+	const order: AccessLevel[] = ['admin', 'write', 'read'];
+	const entries = order.filter(l => grouped[l]?.length);
+	if (entries.length === 0) return null;
 	return (
 		<div className="flex flex-wrap gap-1 mt-2">
-			{(Object.entries(counts) as [AccessLevel, number][]).filter(([, n]) => n > 0).map(([level, count]) => (
-				<span key={level} className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium ${LEVEL_BADGE[level]}`}>
-					{count} {level.charAt(0).toUpperCase() + level.slice(1)}
-				</span>
+			{entries.map(level => (
+				<LevelTag key={level} level={level} modules={grouped[level]!} />
 			))}
 		</div>
 	);
@@ -243,7 +287,7 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 						Roles
 					</h2>
 					<p className="text-sm text-muted-foreground mt-0.5">
-						Define who can do what in your organization.
+						Define who can do what. You can fine-tune permissions any time from <span className="font-medium text-foreground">Settings → Roles</span>.
 					</p>
 				</div>
 				<Button
@@ -278,7 +322,7 @@ function RolesStep({ orgId, roles, templates, onReload }: {
 											<Badge variant="secondary" className="text-xs">you</Badge>
 										)}
 									</div>
-									{role.access && <AccessSummaryBadges access={role.access} />}
+									{role.access && <AccessSummaryTags access={role.access} />}
 								</div>
 								{!isOwner && (
 									<button
@@ -369,7 +413,7 @@ function TemplateModal({ open, onClose, templates, roles, orgId, onReload }: {
 				<DialogHeader>
 					<DialogTitle>Role templates</DialogTitle>
 					<p className="text-sm text-muted-foreground">
-						Templates are copied into your org — you can edit permissions later.
+						Templates are copied into your org. Click the level tags to see which modules are included. You can adjust permissions any time from <span className="font-medium text-foreground">Settings → Roles</span>.
 					</p>
 				</DialogHeader>
 
@@ -387,7 +431,7 @@ function TemplateModal({ open, onClose, templates, roles, orgId, onReload }: {
 								<div className="flex-1 min-w-0">
 									<p className="text-sm font-medium">{t.name}</p>
 									<p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-									{t.access && <AccessSummaryBadges access={t.access} />}
+									{t.access && <AccessSummaryTags access={t.access} />}
 								</div>
 								<div className="shrink-0 mt-0.5">
 									{applied ? (
