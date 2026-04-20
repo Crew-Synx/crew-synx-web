@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { FloatingLabelInput } from '@/components/ui/floating-label-input';
+import { OtpInput } from '@/components/ui/otp-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -141,17 +141,9 @@ export default function VerifyForm() {
             <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
           )}
 
-          <FloatingLabelInput
-            id="otp"
-            label="6-Digit Code"
-            name="otp"
-            type="text"
-            autoComplete="one-time-code"
-            maxLength={6}
-            required
+          <OtpInput
             value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className="text-center text-2xl tracking-widest h-14 bg-muted/50"
+            onChange={setOtp}
             disabled={isLoading}
           />
 
