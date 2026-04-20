@@ -4,20 +4,12 @@ import { Logo } from '@/components/ui/logo';
 const footerLinks = {
 	Product: [
 		{ label: 'Features', href: '#features' },
-		{ label: 'Pricing', href: '/pricing' },
-		{ label: 'Integrations', href: '#' },
-		{ label: 'Changelog', href: '#' },
-	],
-	Company: [
-		{ label: 'About', href: '#' },
-		{ label: 'Blog', href: '#' },
-		{ label: 'Careers', href: '#' },
-		{ label: 'Contact', href: '#' },
+		{ label: 'Downloads', href: '#downloads' },
+		{ label: 'Contact & Pricing', href: '/pricing' },
 	],
 	Legal: [
 		{ label: 'Privacy Policy', href: '/privacy' },
 		{ label: 'Terms of Service', href: '/terms' },
-		{ label: 'Cookie Policy', href: '#' },
 	],
 };
 
@@ -30,7 +22,7 @@ export function Footer() {
 					<div className="col-span-2 md:col-span-1">
 						<Logo size={32} />
 						<p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-							The all-in-one workspace for modern teams. Manage projects, track attendance, and collaborate seamlessly.
+							Self-hosted workforce management. Buy a lifetime license, deploy anywhere, use forever.
 						</p>
 					</div>
 

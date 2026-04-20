@@ -7,96 +7,90 @@ import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
 import {
   LayoutDashboard,
-  Users,
-  CalendarCheck,
   MessageSquare,
+  CalendarCheck,
   BarChart3,
   Shield,
   Zap,
-  Clock,
+  Key,
+  Server,
+  Wrench,
   CheckCircle2,
   ArrowRight,
-  Star,
   Download,
   Monitor,
   Smartphone,
   Apple,
+  Mail,
 } from 'lucide-react';
-import Image from 'next/image';
 
 const features = [
   {
     icon: LayoutDashboard,
     title: 'Project Management',
-    description: 'Kanban boards, task tracking, and project timelines to keep your team on track.',
+    description:
+      'Kanban boards, sprint planning, task assignments, and project timelines — everything your team needs to ship, in one place.',
   },
   {
-    icon: Users,
-    title: 'Team Collaboration',
-    description: 'Real-time chat, file sharing, and team channels for seamless communication.',
+    icon: MessageSquare,
+    title: 'Team Chat & Channels',
+    description:
+      'Real-time messaging with threaded conversations, file sharing, and dedicated channels per project or department.',
   },
   {
     icon: CalendarCheck,
     title: 'Attendance Tracking',
-    description: 'Automated attendance with geo-fencing, shift management, and leave tracking.',
+    description:
+      'Automated check-in/out, geo-fencing, shift scheduling, leave requests, and approval workflows.',
   },
   {
     icon: BarChart3,
     title: 'Analytics & Reports',
-    description: 'Actionable insights with custom dashboards and exportable reports.',
+    description:
+      'Custom dashboards, productivity insights, attendance summaries, and exportable reports built for decision-makers.',
   },
   {
     icon: Shield,
-    title: 'Role-Based Access',
-    description: 'Granular permissions and roles to keep your data secure across teams.',
+    title: 'Role-Based Access Control',
+    description:
+      'Granular permission sets, custom roles, and organization-level isolation so every person sees only what they should.',
   },
   {
     icon: Zap,
     title: 'Integrations',
-    description: 'Connect with tools you already use — Slack, Google Workspace, and more.',
+    description:
+      'Connect the tools your team already uses. Need something specific? Request it — we build integrations on demand.',
   },
 ];
 
-const testimonials = [
+const differentiators = [
   {
-    name: 'Sarah Chen',
-    role: 'Engineering Manager',
-    company: 'TechFlow Inc.',
-    avatar: 'SC',
-    content: 'CrewSynx replaced three separate tools for us. The kanban boards and attendance tracking in one place is a game-changer.',
-    rating: 5,
+    icon: Key,
+    title: 'Lifetime License',
+    description:
+      'Buy a version once and own it forever. No monthly subscriptions, no annual renewals, no per-seat fees. Pay once, use indefinitely.',
   },
   {
-    name: 'Marcus Johnson',
-    role: 'Operations Director',
-    company: 'BuildRight Co.',
-    avatar: 'MJ',
-    content: 'We reduced our team coordination overhead by 40%. The real-time features make remote work feel effortless.',
-    rating: 5,
+    icon: Server,
+    title: 'Deploy Anywhere',
+    description:
+      'Run CrewSynx on your own server, private cloud, or any VPS you choose. Your data never leaves your infrastructure.',
   },
   {
-    name: 'Priya Patel',
-    role: 'HR Lead',
-    company: 'GreenLeaf Solutions',
-    avatar: 'PP',
-    content: 'The attendance and leave management alone saved us hours every week. The analytics are the cherry on top.',
-    rating: 5,
+    icon: Wrench,
+    title: 'Built Around Your Needs',
+    description:
+      "Need a feature that doesn't exist yet? Tell us. We build custom functionality and ship it as part of your licensed version.",
   },
-];
-
-const stats = [
-  { value: '10,000+', label: 'Teams' },
-  { value: '99.9%', label: 'Uptime' },
-  { value: '50+', label: 'Countries' },
-  { value: '4.9/5', label: 'Rating' },
 ];
 
 export const metadata: Metadata = {
-  title: 'CrewSynx — Modern Workforce Management',
-  description: 'Manage your entire workforce — attendance, payroll, roles, and more — from one powerful platform.',
+  title: 'CrewSynx — Workforce Management, Your Way',
+  description:
+    'CrewSynx is a self-hosted workforce platform. Buy a lifetime license, deploy on your own infrastructure, and use it forever — no recurring payments.',
   openGraph: {
-    title: 'CrewSynx — Modern Workforce Management',
-    description: 'Manage your entire workforce from one powerful platform.',
+    title: 'CrewSynx — Workforce Management, Your Way',
+    description: 'Buy once. Deploy anywhere. Use forever. CrewSynx is not a subscription.',
     type: 'website',
   },
 };
@@ -106,63 +100,84 @@ export default function Home() {
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Hero */}
+      {/* ── Hero ─────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 sm:pt-32 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pb-24 pt-24 sm:px-6 sm:pt-36 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-medium">
               <Zap className="mr-1.5 h-3.5 w-3.5" />
-              Now with real-time collaboration
+              Early Access — Not Yet Publicly Released
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Your team&apos;s workspace,{' '}
-              <span className="text-primary">all in one place</span>
+              Workforce management{' '}
+              <span className="text-primary">that&apos;s actually yours</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-muted-foreground sm:text-xl">
-              CrewSynx brings project management, team communication, attendance tracking, and analytics together so your team can focus on what matters.
+              CrewSynx combines project management, team chat, attendance tracking, and analytics
+              into one self-hosted platform. Buy a license, deploy wherever you want, and use it
+              forever — no recurring payments.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button size="lg" className="h-12 px-8 text-base" asChild>
-                <Link href="/auth/register">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Link href="/pricing">
+                  Get in Touch
+                  <Mail className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="h-12 px-8 text-base" asChild>
-                <Link href="#features">See How It Works</Link>
+                <Link href="#features">Explore Features</Link>
               </Button>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              No credit card required. 14-day free trial.
+              Pricing is tailored to your team — contact us for a quote.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Stats */}
+      {/* ── Why We're Different ──────────────────────────────────── */}
       <section className="border-y border-border/50 bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-bold text-foreground">{stat.value}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{stat.label}</div>
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <Badge variant="outline" className="mb-4">Why CrewSynx</Badge>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Not another SaaS subscription
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              We believe software you depend on should belong to you — not rent you access month
+              after month.
+            </p>
+          </div>
+          <div className="mt-16 grid gap-8 md:grid-cols-3">
+            {differentiators.map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border border-border/50 bg-background p-8 shadow-sm"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                  <item.icon className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mt-5 text-lg font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* ── Features ─────────────────────────────────────────────── */}
       <section id="features" className="scroll-mt-16">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Badge variant="outline" className="mb-4">Features</Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Everything your team needs
+              Everything your team needs, in one place
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Replace your scattered tools with one powerful platform designed for modern teams.
+              Replace the stack of scattered tools with a single platform your team will actually
+              want to use.
             </p>
           </div>
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -183,20 +198,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* ── How It Works ─────────────────────────────────────────── */}
       <section className="border-y border-border/50 bg-muted/30">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Up and running in minutes
+              Simple. Permanent. Yours.
             </h2>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
             {[
-              { step: '1', icon: Clock, title: 'Sign up in seconds', desc: 'Create your account and set up your organization with a few clicks.' },
-              { step: '2', icon: Users, title: 'Invite your team', desc: 'Send invite links or codes. Your team joins instantly with role-based access.' },
-              { step: '3', icon: CheckCircle2, title: 'Start collaborating', desc: 'Create projects, assign tasks, track attendance, and chat — all in one place.' },
+              {
+                step: '1',
+                icon: Mail,
+                title: 'Contact us for pricing',
+                desc: 'Tell us about your team size, deployment needs, and any custom features you require. We tailor a quote for you.',
+              },
+              {
+                step: '2',
+                icon: Key,
+                title: 'Receive your license',
+                desc: 'Once agreed, you receive a perpetual license for that version. No lock-in, no expiry, no usage limits.',
+              },
+              {
+                step: '3',
+                icon: CheckCircle2,
+                title: 'Deploy and use forever',
+                desc: 'Run CrewSynx on any server or cloud you choose. Invite your team and start collaborating — forever.',
+              },
             ].map((item) => (
               <div key={item.step} className="relative text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">
@@ -210,55 +240,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="scroll-mt-16">
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <Badge variant="outline" className="mb-4">Testimonials</Badge>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Loved by teams worldwide
-            </h2>
-          </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {testimonials.map((t) => (
-              <Card key={t.name} className="border-border/50">
-                <CardContent className="pt-6">
-                  <div className="flex gap-1">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                    &ldquo;{t.content}&rdquo;
-                  </p>
-                  <div className="mt-6 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                      {t.avatar}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {t.role}, {t.company}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Downloads */}
+      {/* ── Downloads ────────────────────────────────────────────── */}
       <section id="downloads" className="scroll-mt-16 border-t border-border/50">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <Badge variant="outline" className="mb-4">Downloads</Badge>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Get CrewSynx on your device
+              Available on your platform
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Native apps for the best experience. More platforms coming soon.
+              Native client apps for the best experience. More platforms coming.
             </p>
           </div>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mx-auto max-w-4xl">
@@ -308,25 +299,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* ── CTA ──────────────────────────────────────────────────── */}
       <section className="border-t border-border/50">
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-primary px-8 py-16 text-center text-primary-foreground sm:px-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Ready to bring your team together?
+              Ready to own your workforce platform?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-lg text-primary-foreground/80">
-              Join thousands of teams already using CrewSynx to streamline their workflow.
+              Get in touch with us. Tell us what you need — team size, custom features, deployment
+              preferences — and we&apos;ll put together a quote.
             </p>
-            <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-8 flex justify-center">
               <Button size="lg" variant="secondary" className="h-12 px-8 text-base" asChild>
-                <Link href="/auth/register">
-                  Get Started Free
+                <Link href="/pricing">
+                  Contact Us for Pricing
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="h-12 border-primary-foreground/30 px-8 text-base text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
-                <Link href="/pricing">View Pricing</Link>
               </Button>
             </div>
           </div>

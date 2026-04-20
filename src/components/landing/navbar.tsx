@@ -9,8 +9,7 @@ import Link from 'next/link';
 const navLinks = [
 	{ label: 'Features', href: '#features' },
 	{ label: 'Downloads', href: '#downloads' },
-	{ label: 'Pricing', href: '/pricing' },
-	{ label: 'Testimonials', href: '#testimonials' },
+	{ label: 'Contact & Pricing', href: '/pricing' },
 ];
 
 export function Navbar() {
@@ -37,9 +36,6 @@ export function Navbar() {
 				<div className="hidden items-center gap-3 md:flex">
 					<Button variant="ghost" size="sm" asChild>
 						<Link href="/auth/login">Log in</Link>
-					</Button>
-					<Button size="sm" asChild>
-						<Link href="/auth/register">Get Started</Link>
 					</Button>
 				</div>
 
@@ -72,9 +68,7 @@ export function Navbar() {
 						<Button variant="ghost" size="sm" asChild>
 							<Link href="/auth/login">Log in</Link>
 						</Button>
-						<Button size="sm" asChild>
-							<Link href="/auth/register">Get Started</Link>
-						</Button>
+
 					</div>
 				</div>
 			)}
