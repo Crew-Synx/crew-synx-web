@@ -2,10 +2,26 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com';
+
 export const metadata: Metadata = {
-	title: 'Data Processing Agreement | CrewSynx',
+	title: 'Data Processing Agreement — CrewSynx',
 	description:
-		'Template Data Processing Agreement (DPA) for EU and UK enterprise customers of CrewSynx, documenting the zero-access self-hosted arrangement under GDPR.',
+		'Template Data Processing Agreement (DPA) for EU and UK enterprise customers of CrewSynx. Documents the zero-access, self-hosted arrangement and GDPR compliance responsibilities.',
+	keywords: ['CrewSynx DPA', 'data processing agreement', 'GDPR self-hosted software', 'EU compliance workforce platform'],
+	alternates: { canonical: `${BASE_URL}/dpa` },
+	openGraph: {
+		title: 'Data Processing Agreement — CrewSynx',
+		description: 'Template DPA for EU/UK enterprise customers. Butterfly Instruments holds zero access to self-hosted instance data.',
+		type: 'website',
+		url: `${BASE_URL}/dpa`,
+		siteName: 'CrewSynx',
+	},
+	twitter: {
+		card: 'summary',
+		title: 'Data Processing Agreement — CrewSynx',
+		description: 'Template DPA for EU/UK enterprise customers of CrewSynx.',
+	},
 };
 
 const EFFECTIVE_DATE = '21 April 2026';

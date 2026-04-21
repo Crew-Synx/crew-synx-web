@@ -2,10 +2,26 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com';
+
 export const metadata: Metadata = {
-	title: 'Privacy Policy | CrewSynx',
+	title: 'Privacy Policy — CrewSynx',
 	description:
-		'How Butterfly Instruments collects, uses, and protects information on the CrewSynx website and contact form.',
+		'How Butterfly Instruments collects, uses, and protects information submitted via the CrewSynx website and contact form. Self-hosted instances are not covered.',
+	keywords: ['CrewSynx privacy policy', 'Butterfly Instruments data policy', 'self-hosted software privacy'],
+	alternates: { canonical: `${BASE_URL}/privacy` },
+	openGraph: {
+		title: 'Privacy Policy — CrewSynx',
+		description: 'How Butterfly Instruments handles data collected on the CrewSynx website.',
+		type: 'website',
+		url: `${BASE_URL}/privacy`,
+		siteName: 'CrewSynx',
+	},
+	twitter: {
+		card: 'summary',
+		title: 'Privacy Policy — CrewSynx',
+		description: 'How Butterfly Instruments handles data collected on the CrewSynx website.',
+	},
 };
 
 const EFFECTIVE_DATE = '21 April 2026';

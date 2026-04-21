@@ -27,9 +27,44 @@ const licenseHighlights = [
 ];
 
 export const metadata: Metadata = {
-	title: 'Contact & Pricing | CrewSynx',
+	title: 'Contact & Pricing — CrewSynx Lifetime License',
 	description:
-		'Pricing is tailored to your team size and needs. Get in touch and we will put together a quote.',
+		'CrewSynx is sold as a perpetual lifetime license — no subscriptions, no per-seat fees. Pricing is tailored to your team size and deployment needs. Get in touch for a custom quote.',
+	keywords: [
+		'CrewSynx pricing',
+		'lifetime software license',
+		'perpetual license workforce management',
+		'self-hosted HR software pricing',
+		'one-time purchase project management',
+		'no subscription workforce platform',
+	],
+	alternates: {
+		canonical: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com'}/pricing`,
+	},
+	openGraph: {
+		title: 'Contact & Pricing — CrewSynx Lifetime License',
+		description:
+			'No subscriptions, no recurring fees. Buy a perpetual license for CrewSynx and deploy it on your own infrastructure forever.',
+		type: 'website',
+		url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com'}/pricing`,
+		siteName: 'CrewSynx',
+		images: [
+			{
+				url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com'}/og-image.png`,
+				width: 1200,
+				height: 630,
+				alt: 'CrewSynx — Lifetime License Pricing',
+				type: 'image/png',
+			},
+		],
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: 'Contact & Pricing — CrewSynx Lifetime License',
+		description:
+			'No subscriptions. Buy once, deploy anywhere. Contact us for a tailored CrewSynx quote.',
+		images: [`${process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com'}/og-image.png`],
+	},
 };
 
 export default function PricingPage() {

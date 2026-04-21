@@ -15,54 +15,69 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://crewsynx.butterflyi
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
+  applicationName: "CrewSynx",
   title: {
-    default: "CrewSynx — Team Workspace Platform",
+    default: "CrewSynx — Self-Hosted Workforce Management Platform",
     template: "%s | CrewSynx",
   },
   description:
-    "The all-in-one workspace for modern teams. Manage projects, track attendance, handle HR, and collaborate seamlessly — all in one place.",
+    "CrewSynx is a self-hosted workforce management platform. Manage projects, track attendance, run team chat, and view analytics — buy a lifetime license and deploy on your own infrastructure.",
   keywords: [
-    "team workspace",
-    "project management",
-    "attendance tracking",
-    "HR software",
-    "team collaboration",
-    "task management",
+    "self-hosted workforce management",
+    "team workspace software",
+    "project management platform",
+    "attendance tracking software",
+    "HR management system",
+    "team collaboration tool",
+    "kanban board",
     "sprint planning",
     "employee management",
+    "lifetime license software",
+    "on-premise workforce platform",
+    "self-hosted project management",
+    "perpetual license HR software",
+    "workforce analytics",
+    "role-based access control",
+    "deploy anywhere software",
   ],
-  authors: [{ name: "CrewSynx", url: BASE_URL }],
-  creator: "CrewSynx",
-  publisher: "CrewSynx",
+  authors: [{ name: "Butterfly Instruments", url: "https://butterflyinstruments.com" }],
+  creator: "Butterfly Instruments",
+  publisher: "Butterfly Instruments",
+  category: "Business Software",
+  alternates: {
+    canonical: BASE_URL,
+  },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: BASE_URL,
     siteName: "CrewSynx",
-    title: "CrewSynx — Team Workspace Platform",
+    title: "CrewSynx — Self-Hosted Workforce Management Platform",
     description:
-      "The all-in-one workspace for modern teams. Manage projects, track attendance, and collaborate seamlessly.",
+      "Buy a lifetime license, deploy on your own infrastructure, and manage your entire workforce — projects, attendance, chat, and analytics — forever.",
     images: [
       {
-        url: "/og-image.png",
+        url: `${BASE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "CrewSynx — Team Workspace Platform",
+        alt: "CrewSynx — Self-Hosted Workforce Management Platform",
+        type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "CrewSynx — Team Workspace Platform",
-    description:
-      "The all-in-one workspace for modern teams. Manage projects, track attendance, and collaborate seamlessly.",
-    images: ["/og-image.png"],
+    site: "@crewsynx",
     creator: "@crewsynx",
+    title: "CrewSynx — Self-Hosted Workforce Management Platform",
+    description:
+      "Buy a lifetime license, deploy anywhere, manage projects, attendance, and your team — no recurring payments.",
+    images: [`${BASE_URL}/og-image.png`],
   },
   icons: {
     icon: [
@@ -70,6 +85,7 @@ export const metadata: Metadata = {
       { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon.ico",
   },
   manifest: "/manifest.json",
 };

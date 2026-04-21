@@ -2,10 +2,43 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com';
+
 export const metadata: Metadata = {
-	title: 'Security & Compliance FAQ | CrewSynx',
+	title: 'Security & Compliance FAQ — CrewSynx',
 	description:
-		'How CrewSynx handles security, compliance, and data privacy — and why the self-hosted model changes the equation.',
+		'Answers to common security and compliance questions about CrewSynx — SOC 2, GDPR, HIPAA, authentication, responsible disclosure, and how the self-hosted model gives you full control.',
+	keywords: [
+		'CrewSynx security',
+		'self-hosted software compliance',
+		'GDPR self-hosted HR platform',
+		'SOC 2 self-hosted software',
+		'workforce management security FAQ',
+		'responsible disclosure software',
+	],
+	alternates: { canonical: `${BASE_URL}/security` },
+	openGraph: {
+		title: 'Security & Compliance FAQ — CrewSynx',
+		description: 'SOC 2, GDPR, HIPAA, authentication, and responsible disclosure — how CrewSynx handles security in a self-hosted model.',
+		type: 'website',
+		url: `${BASE_URL}/security`,
+		siteName: 'CrewSynx',
+		images: [
+			{
+				url: `${BASE_URL}/og-image.png`,
+				width: 1200,
+				height: 630,
+				alt: 'CrewSynx Security & Compliance',
+				type: 'image/png',
+			},
+		],
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: 'Security & Compliance FAQ — CrewSynx',
+		description: 'How CrewSynx handles security, GDPR, SOC 2, and compliance in a self-hosted deployment.',
+		images: [`${BASE_URL}/og-image.png`],
+	},
 };
 
 const EFFECTIVE_DATE = '21 April 2026';

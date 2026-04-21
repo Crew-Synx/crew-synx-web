@@ -80,20 +80,120 @@ const differentiators = [
   },
 ];
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com';
+
 export const metadata: Metadata = {
-  title: 'CrewSynx — Workforce Management, Your Way',
+  title: 'CrewSynx — Self-Hosted Workforce Management, Your Way',
   description:
-    'CrewSynx is a self-hosted workforce platform. Buy a lifetime license, deploy on your own infrastructure, and use it forever — no recurring payments.',
+    'CrewSynx is a self-hosted workforce management platform. Buy a lifetime license, deploy on your own server or cloud, and manage projects, attendance, chat, and analytics forever — no monthly fees.',
+  keywords: [
+    'self-hosted workforce management',
+    'lifetime license software',
+    'on-premise project management',
+    'perpetual license HR platform',
+    'team workspace no subscription',
+    'deploy anywhere workforce tool',
+    'attendance tracking self-hosted',
+    'kanban sprint planning software',
+  ],
+  alternates: {
+    canonical: BASE_URL,
+  },
   openGraph: {
-    title: 'CrewSynx — Workforce Management, Your Way',
-    description: 'Buy once. Deploy anywhere. Use forever. CrewSynx is not a subscription.',
+    title: 'CrewSynx — Self-Hosted Workforce Management, Your Way',
+    description:
+      'Buy once. Deploy anywhere. Manage projects, attendance, and your whole team — forever. CrewSynx is not a SaaS subscription.',
     type: 'website',
+    url: BASE_URL,
+    siteName: 'CrewSynx',
+    images: [
+      {
+        url: `${BASE_URL}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: 'CrewSynx — Self-Hosted Workforce Management Platform',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CrewSynx — Self-Hosted Workforce Management, Your Way',
+    description:
+      'Buy once. Deploy anywhere. No SaaS fees. Manage your workforce with a lifetime license.',
+    images: [`${BASE_URL}/og-image.png`],
   },
 };
 
 export default function Home() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Organization',
+        '@id': `${BASE_URL}/#organization`,
+        name: 'Butterfly Instruments',
+        url: 'https://butterflyinstruments.com',
+        logo: {
+          '@type': 'ImageObject',
+          url: `${BASE_URL}/icon.png`,
+        },
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'sales',
+          email: 'contact@butterflyinstruments.com',
+        },
+        sameAs: [],
+      },
+      {
+        '@type': 'SoftwareApplication',
+        '@id': `${BASE_URL}/#software`,
+        name: 'CrewSynx',
+        url: BASE_URL,
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Linux, Windows, macOS',
+        description:
+          'A self-hosted workforce management platform combining project management, attendance tracking, team chat, and analytics. Available as a perpetual license — deploy on your own infrastructure.',
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'USD',
+          description: 'Lifetime perpetual license. Contact for a tailored quote.',
+          seller: {
+            '@type': 'Organization',
+            name: 'Butterfly Instruments',
+          },
+        },
+        featureList: [
+          'Project management with Kanban boards and sprint planning',
+          'Attendance tracking with geo-fencing and shift scheduling',
+          'Real-time team chat and channels',
+          'Analytics and exportable reports',
+          'Role-based access control',
+          'Third-party integrations (Google Calendar, Slack, SSO)',
+          'Self-hosted on any server or private cloud',
+          'Lifetime perpetual license — no recurring fees',
+        ],
+        publisher: {
+          '@type': 'Organization',
+          name: 'Butterfly Instruments',
+        },
+      },
+      {
+        '@type': 'WebSite',
+        '@id': `${BASE_URL}/#website`,
+        url: BASE_URL,
+        name: 'CrewSynx',
+        publisher: { '@id': `${BASE_URL}/#organization` },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Navbar />
 
       {/* ── Hero ─────────────────────────────────────────────────── */}

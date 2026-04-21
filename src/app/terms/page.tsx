@@ -2,10 +2,26 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyinstruments.com';
+
 export const metadata: Metadata = {
-	title: 'Terms of Service | CrewSynx',
+	title: 'Terms of Service — CrewSynx',
 	description:
-		'Terms governing the purchase and use of a CrewSynx perpetual software license from Butterfly Instruments.',
+		'Legal terms governing the purchase and use of a CrewSynx perpetual software license from Butterfly Instruments. Includes license scope, restrictions, and warranty information.',
+	keywords: ['CrewSynx terms of service', 'software license agreement', 'perpetual license terms', 'Butterfly Instruments legal'],
+	alternates: { canonical: `${BASE_URL}/terms` },
+	openGraph: {
+		title: 'Terms of Service — CrewSynx',
+		description: 'Terms governing the purchase and perpetual use of a CrewSynx software license.',
+		type: 'website',
+		url: `${BASE_URL}/terms`,
+		siteName: 'CrewSynx',
+	},
+	twitter: {
+		card: 'summary',
+		title: 'Terms of Service — CrewSynx',
+		description: 'Terms governing the purchase and perpetual use of a CrewSynx software license.',
+	},
 };
 
 const EFFECTIVE_DATE = '21 April 2026';
