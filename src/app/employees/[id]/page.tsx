@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -8,14 +8,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FloatingLabelInput } from '@/components/ui/floating-label-input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+	Sheet, SheetContent, SheetHeader, SheetTitle,
+} from '@/components/ui/sheet';
+import {
+	Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
 
 import {
 	Loader2, ArrowLeft, Pencil, Save, X,
 	Phone, Briefcase, CreditCard, Shield, QrCode,
+	CalendarCheck, DollarSign, LayoutDashboard,
 } from 'lucide-react';
-import type { Employee, Organization } from '@/lib/types';
+import type { Employee, Organization, Attendance, Payment } from '@/lib/types';
 import { apiFetch } from '@/lib/api';
-import { parseItemResponse, EmployeeSchema } from '@/lib/schemas';
+import { parseItemResponse, parseListResponse, EmployeeSchema, AttendanceSchema, PaymentSchema } from '@/lib/schemas';
+import { useAppContext } from '@/components/app-shell';
 
 function getSelectedOrg(): Organization | null {
 	if (typeof window === 'undefined') return null;
@@ -23,11 +32,36 @@ function getSelectedOrg(): Organization | null {
 	return stored ? JSON.parse(stored) : null;
 }
 
+// ── Attendance status badge ──────────────────────────────────────────────────
+function attStatusBadge(status: string) {
+	const map: Record<string, string> = {
+		present: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400',
+		absent: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
+		late: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400',
+		half_day: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400',
+		leave: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400',
+	};
+	return (
+		<span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${map[status] || 'bg-muted text-muted-foreground'}`}>
+			{status.replace('_', ' ')}
+		</span>
+	);
+}
+
+// ── Payment status badge ─────────────────────────────────────────────────────
+const PAYMENT_STATUS: Record<string, { color: string; label: string }> = {
+	pending: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300', label: 'Pending' },
+	approved: { color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300', label: 'Approved' },
+	rejected: { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300', label: 'Rejected' },
+	paid: { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300', label: 'Paid' },
+};
+
 export default function EmployeeDetailPage() {
 	const router = useRouter();
 	const params = useParams();
 	const memberId = params.id as string;
 	const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+	const { userRole } = useAppContext();
 
 	const [org, setOrg] = useState<Organization | null>(null);
 	const [employee, setEmployee] = useState<Employee | null>(null);
@@ -35,6 +69,19 @@ export default function EmployeeDetailPage() {
 	const [editing, setEditing] = useState(false);
 	const [saving, setSaving] = useState(false);
 	const [editForm, setEditForm] = useState<Record<string, string>>({});
+
+	// Quick-view sheet
+	const [quickViewOpen, setQuickViewOpen] = useState(false);
+	const [attendance, setAttendance] = useState<Attendance[]>([]);
+	const [payments, setPayments] = useState<Payment[]>([]);
+	const [quickLoading, setQuickLoading] = useState(false);
+	const [attendanceMonth, setAttendanceMonth] = useState(() => {
+		const now = new Date();
+		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+	});
+
+	// Manager if role priority ≤ 3 (same threshold as backend _can_view_all)
+	const isManager = (userRole?.priority ?? 999) <= 3;
 
 	useEffect(() => {
 		const o = getSelectedOrg();
@@ -58,6 +105,34 @@ export default function EmployeeDetailPage() {
 			setLoading(false);
 		}
 	}
+
+	const loadQuickViewData = useCallback(async (emp: Employee, orgId: string, month: string) => {
+		setQuickLoading(true);
+		try {
+			const [attRes, payRes] = await Promise.all([
+				apiFetch(`/attendance/?user_id=${emp.user}&month=${month}`, { orgId }),
+				apiFetch(`/payments/?user_id=${emp.user}`, { orgId }),
+			]);
+			if (attRes.ok) {
+				const d = await attRes.json().catch(() => ({ data: [] }));
+				setAttendance(parseListResponse(AttendanceSchema, d) as unknown as Attendance[]);
+			}
+			if (payRes.ok) {
+				const d = await payRes.json().catch(() => ({ data: [] }));
+				setPayments(parseListResponse(PaymentSchema, d) as unknown as Payment[]);
+			}
+		} finally {
+			setQuickLoading(false);
+		}
+	}, []);
+
+	// Reload attendance when month changes while sheet is open
+	useEffect(() => {
+		if (quickViewOpen && employee && org) {
+			loadQuickViewData(employee, org.id, attendanceMonth);
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [attendanceMonth, quickViewOpen]);
 
 	// Render QR code onto the canvas when employee data loads
 	useEffect(() => {
@@ -141,9 +216,22 @@ export default function EmployeeDetailPage() {
 						</div>
 					</div>
 					{!editing ? (
-						<Button variant="outline" onClick={startEdit}>
-							<Pencil className="mr-2 h-4 w-4" />Edit Profile
-						</Button>
+						<div className="flex gap-2">
+							{isManager && (
+								<Button
+									variant="outline"
+									onClick={() => {
+										setQuickViewOpen(true);
+										if (employee && org) loadQuickViewData(employee, org.id, attendanceMonth);
+									}}
+								>
+									<LayoutDashboard className="mr-2 h-4 w-4" />Quick View
+								</Button>
+							)}
+							<Button variant="outline" onClick={startEdit}>
+								<Pencil className="mr-2 h-4 w-4" />Edit Profile
+							</Button>
+						</div>
 					) : (
 						<div className="flex gap-2">
 							<Button variant="outline" onClick={() => setEditing(false)}>
@@ -272,6 +360,154 @@ export default function EmployeeDetailPage() {
 					</Card>
 				</div>
 			</div>
+
+			{/* ── Manager Quick View Sheet ─────────────────────────────── */}
+			{isManager && (
+				<Sheet open={quickViewOpen} onOpenChange={setQuickViewOpen}>
+					<SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+						<SheetHeader className="mb-4">
+							<SheetTitle className="flex items-center gap-2">
+								<LayoutDashboard className="h-4 w-4" />
+								{employee.user_name} — Quick View
+							</SheetTitle>
+						</SheetHeader>
+
+						{quickLoading ? (
+							<div className="flex items-center justify-center py-16">
+								<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+							</div>
+						) : (
+							<Tabs defaultValue="attendance">
+								<TabsList className="w-full mb-4">
+									<TabsTrigger value="attendance" className="flex-1">
+										<CalendarCheck className="mr-2 h-4 w-4" />Attendance
+									</TabsTrigger>
+									<TabsTrigger value="payments" className="flex-1">
+										<DollarSign className="mr-2 h-4 w-4" />Payments
+									</TabsTrigger>
+								</TabsList>
+
+								{/* ── Attendance Tab ── */}
+								<TabsContent value="attendance" className="space-y-4">
+									<div className="flex items-center gap-2">
+										<label className="text-sm font-medium text-muted-foreground">Month</label>
+										<input
+											type="month"
+											className="border rounded-md px-3 py-1.5 text-sm bg-background"
+											value={attendanceMonth}
+											onChange={e => setAttendanceMonth(e.target.value)}
+										/>
+									</div>
+
+									{/* Stats row */}
+									{attendance.length > 0 && (() => {
+										const counts = attendance.reduce<Record<string, number>>((acc, r) => {
+											acc[r.status] = (acc[r.status] || 0) + 1;
+											return acc;
+										}, {});
+										return (
+											<div className="grid grid-cols-3 gap-3">
+												{[
+													{ label: 'Present', key: 'present', color: 'text-green-600' },
+													{ label: 'Absent', key: 'absent', color: 'text-red-600' },
+													{ label: 'Late', key: 'late', color: 'text-yellow-600' },
+												].map(s => (
+													<div key={s.key} className="rounded-lg border p-3 text-center">
+														<div className={`text-2xl font-bold ${s.color}`}>{counts[s.key] || 0}</div>
+														<div className="text-xs text-muted-foreground mt-0.5">{s.label}</div>
+													</div>
+												))}
+											</div>
+										);
+									})()}
+
+									{attendance.length === 0 ? (
+										<p className="text-sm text-muted-foreground text-center py-8">No attendance records for this month.</p>
+									) : (
+										<div className="rounded-md border overflow-hidden">
+											<Table>
+												<TableHeader>
+													<TableRow>
+														<TableHead>Date</TableHead>
+														<TableHead>Status</TableHead>
+														<TableHead>Check In</TableHead>
+														<TableHead>Check Out</TableHead>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
+													{[...attendance].sort((a, b) => b.date.localeCompare(a.date)).map(r => (
+														<TableRow key={r.id}>
+															<TableCell className="text-sm">{r.date}</TableCell>
+															<TableCell>{attStatusBadge(r.status)}</TableCell>
+															<TableCell className="text-sm text-muted-foreground">{r.check_in_time?.slice(0, 5) || '—'}</TableCell>
+															<TableCell className="text-sm text-muted-foreground">{r.check_out_time?.slice(0, 5) || '—'}</TableCell>
+														</TableRow>
+													))}
+												</TableBody>
+											</Table>
+										</div>
+									)}
+								</TabsContent>
+
+								{/* ── Payments Tab ── */}
+								<TabsContent value="payments" className="space-y-4">
+									{payments.length === 0 ? (
+										<p className="text-sm text-muted-foreground text-center py-8">No payments found for this member.</p>
+									) : (
+										<>
+											{/* Summary */}
+											<div className="grid grid-cols-2 gap-3">
+												{(['pending', 'approved', 'rejected', 'paid'] as const).map(s => {
+													const total = payments
+														.filter(p => p.status === s)
+														.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+													const { color, label } = PAYMENT_STATUS[s];
+													return total > 0 ? (
+														<div key={s} className={`rounded-lg border p-3 ${color}`}>
+															<div className="text-xs font-medium">{label}</div>
+															<div className="text-lg font-bold">
+																{payments.find(p => p.status === s)?.currency || 'INR'}{' '}
+																{total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+															</div>
+														</div>
+													) : null;
+												})}
+											</div>
+
+											<div className="rounded-md border overflow-hidden">
+												<Table>
+													<TableHeader>
+														<TableRow>
+															<TableHead>Title</TableHead>
+															<TableHead>Amount</TableHead>
+															<TableHead>Status</TableHead>
+															<TableHead>Date</TableHead>
+														</TableRow>
+													</TableHeader>
+													<TableBody>
+														{[...payments].sort((a, b) => b.payment_date.localeCompare(a.payment_date)).map(p => (
+															<TableRow key={p.id}>
+																<TableCell className="text-sm font-medium max-w-40 truncate">{p.title}</TableCell>
+																<TableCell className="text-sm">{p.currency} {parseFloat(p.amount).toLocaleString()}</TableCell>
+																<TableCell>
+																	<span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS[p.status]?.color || 'bg-muted text-muted-foreground'}`}>
+																		{PAYMENT_STATUS[p.status]?.label || p.status}
+																	</span>
+																</TableCell>
+																<TableCell className="text-sm text-muted-foreground">{p.payment_date}</TableCell>
+															</TableRow>
+														))}
+													</TableBody>
+												</Table>
+											</div>
+										</>
+									)}
+								</TabsContent>
+							</Tabs>
+						)}
+					</SheetContent>
+				</Sheet>
+			)}
 		</div>
 	);
 }
