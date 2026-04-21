@@ -58,8 +58,8 @@ function buildNavGroups(): NavGroup[] {
 					icon: Briefcase,
 					iconColor: 'text-blue-600 dark:text-blue-400',
 					iconBg: 'bg-blue-100 dark:bg-blue-950',
-					permission: (p, perms) =>
-						p <= 2 || perms.some((k) => k.startsWith('member.')),
+					permission: (p, keys) =>
+						p <= 2 || keys.includes('employees') || keys.includes('members'),
 				},
 			],
 		},
@@ -108,11 +108,19 @@ function buildNavGroups(): NavGroup[] {
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 	const isMobile = !!onNavigate;
 	const pathname = usePathname();
-	const { userRole, sidebarCollapsed, setSidebarCollapsed } = useAppContext();
+	const { userRole, roleLoaded, sidebarCollapsed, setSidebarCollapsed } = useAppContext();
 
 	const priority = userRole?.priority ?? 99;
-	const perms = userRole?.access ? Object.keys(userRole.access) : [];
+	// Module keys from the access map (e.g. 'members', 'employees')
+	const accessKeys = userRole?.access ? Object.keys(userRole.access) : [];
 	const navGroups = buildNavGroups();
+
+	// Show item while role is still loading; once loaded, apply the permission fn.
+	const isVisible = (item: NavItem) => {
+		if (!item.permission) return true;
+		if (!roleLoaded) return true;
+		return item.permission(priority, accessKeys);
+	};
 
 	const isActive = (href: string) => {
 		if (href === '/dashboard') return pathname === href;
@@ -145,9 +153,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 			<nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
 				<TooltipProvider delayDuration={0}>
 					{navGroups.map((group) => {
-						const visibleItems = group.items.filter(
-							(item) => !item.permission || item.permission(priority, perms)
-						);
+						const visibleItems = group.items.filter(isVisible);
 						if (visibleItems.length === 0) return null;
 
 						return (

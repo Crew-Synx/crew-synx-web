@@ -7,8 +7,6 @@ import { apiFetch } from '@/lib/api';
 import {
 	parseListResponse,
 	OrganizationSchema,
-	MemberSchema,
-	RoleSchema,
 	NotificationSchema,
 } from '@/lib/schemas';
 import type { Organization, Role } from '@/lib/types';
@@ -61,6 +59,7 @@ export interface AppContextValue {
 	setMobileSidebarOpen: (v: boolean) => void;
 	handleLogout: () => void;
 	loading: boolean;
+	roleLoaded: boolean;
 	refreshNotifications: () => Promise<void>;
 }
 
@@ -87,6 +86,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 	const [orgs, setOrgs] = useState<Organization[]>([]);
 	const [selectedOrg, setSelectedOrgState] = useState<Organization | null>(null);
 	const [userRole, setUserRole] = useState<Role | null>(null);
+	const [roleLoaded, setRoleLoaded] = useState(false);
 	const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const [sidebarCollapsed, setSidebarCollapsedState] = useState(false);
@@ -144,25 +144,18 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 		}
 	}, []);
 
-	async function fetchUserRole(orgId: string, userId: string) {
+	async function fetchUserRole(orgId: string) {
 		try {
-			const [memberRes, roleRes] = await Promise.all([
-				apiFetch(`/organizations/${orgId}/members/`, { orgId }),
-				apiFetch('/roles/', { orgId }),
-			]);
-			if (memberRes.ok && roleRes.ok) {
-				const memberData = await memberRes.json().catch(() => ({ data: [] }));
-				const roleData = await roleRes.json().catch(() => ({ data: [] }));
-				const members = parseListResponse(MemberSchema, memberData);
-				const roles = parseListResponse(RoleSchema, roleData);
-				const myMember = members.find((m) => m.user.id === userId);
-				if (myMember?.role?.id) {
-					const fullRole = roles.find((r) => r.id === myMember.role.id);
-					if (fullRole) setUserRole(fullRole as Role);
-				}
+			const res = await apiFetch('/roles/my-role/', { orgId });
+			if (res.ok) {
+				const data = await res.json().catch(() => ({ data: null }));
+				const role = data?.data ?? null;
+				if (role?.id) setUserRole(role as Role);
 			}
 		} catch {
 			// Role fetch failure is non-critical
+		} finally {
+			setRoleLoaded(true);
 		}
 	}
 
@@ -204,9 +197,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 					if (orgToUse) {
 						if (!cached) setSelectedOrg(orgToUse);
 						prevOrgIdRef.current = orgToUse.id;
-						if (u?.id) {
-							await fetchUserRole(orgToUse.id, u.id);
-						}
+						await fetchUserRole(orgToUse.id);
 					}
 				}
 
@@ -226,7 +217,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 		if (!selectedOrg || !currentUserIdRef.current) return;
 		if (selectedOrg.id === prevOrgIdRef.current) return;
 		prevOrgIdRef.current = selectedOrg.id;
-		fetchUserRole(selectedOrg.id, currentUserIdRef.current);
+		setUserRole(null);
+		setRoleLoaded(false);
+		fetchUserRole(selectedOrg.id);
 		refreshNotifications();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [selectedOrg?.id]);
@@ -253,6 +246,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 		setMobileSidebarOpen,
 		handleLogout,
 		loading,
+		roleLoaded,
 		refreshNotifications,
 	};
 
