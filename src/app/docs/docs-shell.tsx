@@ -18,16 +18,24 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Workflow,
+	X,
 } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import {
+	Dialog,
+	DialogContent,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import * as VisuallyHiddenPrimitive from "@radix-ui/react-visually-hidden";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+
 import { cn } from "@/lib/utils";
-import { DOCS_GROUPS, DOCS_MODULE_MAP, type DocsModule, type DocsSection } from "./docs-data";
+import { DOCS_GROUPS, DOCS_MODULE_MAP, DOCS_MODULES, type DocsModule, type DocsSection } from "./docs-data";
 
 const ICON_BY_SLUG = {
 	overview: BookOpen,
@@ -169,6 +177,8 @@ export function DocsShell({ docsModule }: { docsModule: DocsModule }) {
 	const [mobileNavOpen, setMobileNavOpen] = useState(false);
 	const [activeSection, setActiveSection] = useState(docsModule.sections[0]?.id ?? "");
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
 
 	useEffect(() => {
 		const sectionElements = docsModule.sections
@@ -206,6 +216,46 @@ export function DocsShell({ docsModule }: { docsModule: DocsModule }) {
 
 	const currentSectionId = activeSection || docsModule.sections[0]?.id || "";
 
+	// Flatten all sections across all modules for search
+	const searchResults = useMemo(() => {
+		const q = searchQuery.trim().toLowerCase();
+		if (!q) return [];
+		const results: { moduleSlug: string; moduleTitle: string; sectionId: string; sectionTitle: string; excerpt: string }[] = [];
+		for (const mod of DOCS_MODULES) {
+			for (const section of mod.sections) {
+				const haystack = [
+					mod.title,
+					section.title,
+					section.summary,
+					...(section.paragraphs ?? []),
+					...(section.bullets ?? []),
+				].join(" ").toLowerCase();
+				if (haystack.includes(q)) {
+					results.push({
+						moduleSlug: mod.slug,
+						moduleTitle: mod.title,
+						sectionId: section.id,
+						sectionTitle: section.title,
+						excerpt: section.summary,
+					});
+				}
+			}
+		}
+		return results;
+	}, [searchQuery]);
+
+	// cmd+k to open search
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+				e.preventDefault();
+				setSearchOpen((prev) => !prev);
+			}
+		};
+		window.addEventListener("keydown", handler);
+		return () => window.removeEventListener("keydown", handler);
+	}, []);
+
 	return (
 		<div className="flex min-h-screen flex-col bg-background">
 			{/* Top navbar — full width, flush */}
@@ -220,30 +270,21 @@ export function DocsShell({ docsModule }: { docsModule: DocsModule }) {
 					<Menu className="h-4 w-4" />
 				</Button>
 
-				<div className="flex items-center gap-2">
-					<span className="grid h-8 w-8 place-items-center rounded-md bg-primary/12 text-primary">
-						<BookOpen className="h-4 w-4" />
-					</span>
-					<div className="hidden sm:block">
-						<p className="text-sm font-semibold">CrewSynx Docs</p>
-						<p className="text-xs text-muted-foreground">Product documentation</p>
-					</div>
+				<div className="flex items-center gap-3">
+					<Logo size={28} href="/" />
+					<span className="hidden text-muted-foreground sm:block">/</span>
+					<span className="hidden text-sm font-medium text-muted-foreground sm:block">Docs</span>
 				</div>
 
-				<div className="ml-2 hidden h-9 w-full max-w-xs items-center gap-2 rounded-md border border-border/60 bg-background px-2.5 md:flex">
+				<button
+					type="button"
+					onClick={() => setSearchOpen(true)}
+					className="ml-2 hidden h-9 w-full max-w-xs items-center gap-2 rounded-md border border-border/60 bg-background px-2.5 text-left transition-colors hover:border-border hover:bg-accent/40 md:flex"
+				>
 					<Search className="h-4 w-4 text-muted-foreground" />
-					<span className="text-sm text-muted-foreground">Search docs...</span>
-					<Badge variant="outline" className="ml-auto text-[10px]">cmd+k</Badge>
-				</div>
-
-				<div className="ml-auto flex items-center gap-2">
-					<Button variant="outline" size="sm" asChild>
-						<Link href="/dashboard">Open app</Link>
-					</Button>
-					<Button size="sm" asChild>
-						<Link href="/onboarding">Get started</Link>
-					</Button>
-				</div>
+					<span className="flex-1 text-sm text-muted-foreground">Search docs...</span>
+					<Badge variant="outline" className="ml-auto text-[10px]">⌘K</Badge>
+				</button>
 			</header>
 
 			{/* Body row — sidebar flush left, content, right TOC */}
@@ -316,11 +357,61 @@ export function DocsShell({ docsModule }: { docsModule: DocsModule }) {
 				</div>
 			</div>
 
+			{/* Search dialog */}
+			<Dialog open={searchOpen} onOpenChange={(open) => { setSearchOpen(open); if (!open) setSearchQuery(""); }}>
+				<DialogContent className="max-w-lg p-0 overflow-hidden">
+					<VisuallyHiddenPrimitive.Root>
+						<DialogTitle>Search documentation</DialogTitle>
+					</VisuallyHiddenPrimitive.Root>
+					<div className="flex items-center gap-3 border-b border-border/60 px-4 py-3">
+						<Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+						<input
+							autoFocus
+							type="text"
+							placeholder="Search documentation…"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+						/>
+						{searchQuery && (
+							<button type="button" onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground">
+								<X className="h-4 w-4" />
+							</button>
+						)}
+					</div>
+					<div className="max-h-80 overflow-y-auto">
+						{searchQuery.trim() === "" && (
+							<p className="px-4 py-6 text-center text-sm text-muted-foreground">Start typing to search…</p>
+						)}
+						{searchQuery.trim() !== "" && searchResults.length === 0 && (
+							<p className="px-4 py-6 text-center text-sm text-muted-foreground">No results for &ldquo;{searchQuery}&rdquo;</p>
+						)}
+						{searchResults.length > 0 && (
+							<ul className="py-2">
+								{searchResults.map((result) => (
+									<li key={`${result.moduleSlug}-${result.sectionId}`}>
+										<Link
+											href={`/docs/${result.moduleSlug}#${result.sectionId}`}
+											onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+											className="flex flex-col gap-0.5 px-4 py-3 transition-colors hover:bg-accent/60"
+										>
+											<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{result.moduleTitle}</span>
+											<span className="text-sm font-medium text-foreground">{result.sectionTitle}</span>
+											<span className="line-clamp-1 text-xs text-muted-foreground">{result.excerpt}</span>
+										</Link>
+									</li>
+								))}
+							</ul>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
+
 			<Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
 				<SheetContent side="left" className="w-[86vw] max-w-sm border-r border-border/60 p-0">
-					<VisuallyHidden.Root>
+					<VisuallyHiddenPrimitive.Root>
 						<SheetTitle>Documentation navigation</SheetTitle>
-					</VisuallyHidden.Root>
+					</VisuallyHiddenPrimitive.Root>
 					<div className="h-14 border-b border-border/50 px-4 py-3">
 						<p className="text-sm font-semibold">CrewSynx Docs</p>
 						<p className="text-xs text-muted-foreground">Module navigation</p>

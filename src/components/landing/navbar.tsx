@@ -7,7 +7,9 @@ import Link from 'next/link';
 
 const navLinks = [
 	{ label: 'Features', href: '#features' },
-	{ label: 'Contact & Pricing', href: '/pricing' },
+	{ label: 'Documentation', href: '/docs' },
+	{ label: 'FAQs', href: '#faqs' },
+	{ label: 'Pricing', href: '/pricing' },
 ];
 
 export function Navbar() {
