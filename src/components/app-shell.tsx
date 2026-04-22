@@ -42,6 +42,7 @@ export interface NotificationItem {
 	created_at: string;
 	organization_id?: string;
 	organization_name?: string;
+	data?: Record<string, string>;
 }
 
 export interface AppContextValue {

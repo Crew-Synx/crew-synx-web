@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAppContext } from './app-shell';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,42 @@ function formatTimeAgo(dateStr: string) {
 	return `${Math.floor(hrs / 24)}d ago`;
 }
 
+/** Returns the app route to navigate to for a given notification type + data payload. */
+function notifRoute(
+	notifType: string,
+	data?: Record<string, string>,
+): string | null {
+	switch (notifType) {
+		case 'issue_assigned':
+		case 'issue_updated':
+		case 'issue_status_changed':
+		case 'issue_commented':
+		case 'project_created':
+		case 'project_member_added':
+		case 'project_member_removed':
+			return '/dashboard';
+		case 'payment_created':
+		case 'payment_approved':
+		case 'payment_rejected':
+		case 'payment_paid':
+			return '/payments';
+		case 'attendance_recorded':
+			return '/attendance';
+		case 'member_invited':
+		case 'member_joined':
+		case 'member_removed':
+		case 'member_role_changed':
+		case 'member_added':
+			return '/employees';
+		case 'mention':
+			return data?.room_id ? `/chat?room=${data.room_id}` : '/chat';
+		case 'welcome':
+			return '/dashboard';
+		default:
+			return null;
+	}
+}
+
 export function AppNavbar() {
 	const {
 		user,
@@ -46,6 +83,7 @@ export function AppNavbar() {
 		handleLogout,
 	} = useAppContext();
 
+	const router = useRouter();
 	const [notifOpen, setNotifOpen] = useState(false);
 
 	const userInitials = user?.name
@@ -142,13 +180,11 @@ export function AppNavbar() {
 										!n.read && 'bg-accent/30'
 									)}
 									onClick={() => {
-										if (!n.read) {
-											const orgId =
-												(n as { organization_id?: string }).organization_id ||
-												selectedOrg?.id ||
-												'';
-											markNotifRead(n.id, orgId);
-										}
+										const orgId = n.organization_id || selectedOrg?.id || '';
+										if (!n.read) markNotifRead(n.id, orgId);
+										setNotifOpen(false);
+										const route = notifRoute(n.notification_type, n.data);
+										if (route) router.push(route);
 									}}
 								>
 									<div className="flex w-full items-start justify-between gap-2">
