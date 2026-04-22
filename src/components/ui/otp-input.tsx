@@ -13,6 +13,7 @@ interface OtpInputProps {
 
 export function OtpInput({ value, onChange, length = 6, disabled = false, className }: OtpInputProps) {
 	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+	const justPastedRef = useRef(false);
 
 	const digits = Array.from({ length }, (_, i) => value[i] ?? '');
 
@@ -25,7 +26,23 @@ export function OtpInput({ value, onChange, length = 6, disabled = false, classN
 	};
 
 	const handleChange = (index: number, char: string) => {
-		const digit = char.replace(/\D/g, '').slice(-1);
+		// Suppress the onChange that fires right after onPaste sets the value
+		if (justPastedRef.current) {
+			justPastedRef.current = false;
+			return;
+		}
+		const cleaned = char.replace(/\D/g, '');
+		if (cleaned.length > 1) {
+			// Multi-char input (e.g. iOS paste button bypasses the paste event)
+			const newDigits = [...digits];
+			for (let j = 0; j < cleaned.length && index + j < length; j++) {
+				newDigits[index + j] = cleaned[j];
+			}
+			onChange(newDigits.join(''));
+			inputRefs.current[Math.min(index + cleaned.length, length - 1)]?.focus();
+			return;
+		}
+		const digit = cleaned.slice(-1);
 		const newDigits = [...digits];
 		newDigits[index] = digit;
 		onChange(newDigits.join(''));
@@ -54,6 +71,7 @@ export function OtpInput({ value, onChange, length = 6, disabled = false, classN
 		e.preventDefault();
 		const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length);
 		if (!pasted) return;
+		justPastedRef.current = true;
 		onChange(pasted);
 		const nextIndex = Math.min(pasted.length, length - 1);
 		inputRefs.current[nextIndex]?.focus();
