@@ -7,7 +7,6 @@ import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
 import {
   LayoutDashboard,
-  MessageSquare,
   CalendarCheck,
   BarChart3,
   Shield,
@@ -26,12 +25,6 @@ const features = [
     title: 'Project Management',
     description:
       'Kanban boards, sprint planning, task assignments, and project timelines — everything your team needs to ship, in one place.',
-  },
-  {
-    icon: MessageSquare,
-    title: 'Team Chat & Channels',
-    description:
-      'Real-time messaging with threaded conversations, file sharing, and dedicated channels per project or department.',
   },
   {
     icon: CalendarCheck,
@@ -85,7 +78,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://crewsynx.butterflyi
 export const metadata: Metadata = {
   title: 'CrewSynx — Self-Hosted Workforce Management, Your Way',
   description:
-    'CrewSynx is a self-hosted workforce management platform. Buy a lifetime license, deploy on your own server or cloud, and manage projects, attendance, chat, and analytics forever — no monthly fees.',
+    'CrewSynx is a self-hosted workforce management platform. Buy a lifetime license, deploy on your own server or cloud, and manage projects, attendance, and analytics forever — no monthly fees.',
   keywords: [
     'self-hosted workforce management',
     'lifetime license software',
@@ -153,7 +146,7 @@ export default function Home() {
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Linux, Windows, macOS',
         description:
-          'A self-hosted workforce management platform combining project management, attendance tracking, team chat, and analytics. Available as a perpetual license — deploy on your own infrastructure.',
+          'A self-hosted workforce management platform combining project management, attendance tracking, and analytics. Available as a perpetual license — deploy on your own infrastructure.',
         offers: {
           '@type': 'Offer',
           priceCurrency: 'USD',
@@ -166,7 +159,6 @@ export default function Home() {
         featureList: [
           'Project management with Kanban boards and sprint planning',
           'Attendance tracking with geo-fencing and shift scheduling',
-          'Real-time team chat and channels',
           'Analytics and exportable reports',
           'Role-based access control',
           'Third-party integrations (Google Calendar, Slack, SSO)',
@@ -209,7 +201,7 @@ export default function Home() {
               <span className="text-primary">that&apos;s actually yours</span>
             </h1>
             <p className="mt-6 text-lg leading-8 text-muted-foreground sm:text-xl">
-              CrewSynx combines project management, team chat, attendance tracking, and analytics
+              CrewSynx combines project management, attendance tracking, and analytics
               into one self-hosted platform. Buy a license, deploy wherever you want, and use it
               forever — no recurring payments.
             </p>

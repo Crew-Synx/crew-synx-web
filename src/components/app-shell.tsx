@@ -23,7 +23,6 @@ const APP_ROUTE_PREFIXES = [
 	'/settings',
 	'/profile',
 	'/analytics',
-	'/chat',
 ];
 
 export interface UserData {

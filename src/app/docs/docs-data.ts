@@ -51,7 +51,7 @@ export const DOCS_MODULES: DocsModule[] = [
 				bullets: [
 					"Workspace: A dedicated environment for your organization configuration and data.",
 					"Roles and access: Permission-based access control for admins, managers, and members.",
-					"Modules: Project management, attendance, chat, analytics, and integrations.",
+					"Modules: Project management, attendance, analytics, and integrations.",
 					"Audit trail: Key changes and approvals remain trackable for governance.",
 				],
 			},
@@ -193,21 +193,11 @@ export const DOCS_MODULES: DocsModule[] = [
 	},
 	{
 		slug: "communication",
-		title: "Chat and Notifications",
+		title: "Notifications",
 		category: "Operations",
 		description:
-			"Keep distributed teams aligned with real-time communication and actionable alerts.",
+			"Keep distributed teams aligned with actionable alerts and notification controls.",
 		sections: [
-			{
-				id: "chat",
-				title: "Team chat",
-				summary: "Use channels and direct messaging for fast coordination.",
-				bullets: [
-					"Project-specific channels for focused communication.",
-					"Mentions and threaded context for clarity.",
-					"Unread indicators and message recency tracking.",
-				],
-			},
 			{
 				id: "notifications",
 				title: "Notification controls",

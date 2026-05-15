@@ -60,8 +60,6 @@ function notifRoute(
 		case 'member_role_changed':
 		case 'member_added':
 			return '/employees';
-		case 'mention':
-			return data?.room_id ? `/chat?room=${data.room_id}` : '/chat';
 		case 'welcome':
 			return '/dashboard';
 		default:

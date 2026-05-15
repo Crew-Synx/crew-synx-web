@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | CrewSynx",
   },
   description:
-    "CrewSynx is a self-hosted workforce management platform. Manage projects, track attendance, run team chat, and view analytics — buy a lifetime license and deploy on your own infrastructure.",
+    "CrewSynx is a self-hosted workforce management platform. Manage projects, track attendance, and view analytics — buy a lifetime license and deploy on your own infrastructure.",
   keywords: [
     "self-hosted workforce management",
     "team workspace software",
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     siteName: "CrewSynx",
     title: "CrewSynx — Self-Hosted Workforce Management Platform",
     description:
-      "Buy a lifetime license, deploy on your own infrastructure, and manage your entire workforce — projects, attendance, chat, and analytics — forever.",
+      "Buy a lifetime license, deploy on your own infrastructure, and manage your entire workforce — projects, attendance, and analytics — forever.",
     images: [
       {
         url: `${BASE_URL}/og-image.png`,
