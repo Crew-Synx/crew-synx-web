@@ -1,7 +1,7 @@
 {
 	"name": "CrewSynx — Workforce Management Platform",
 	"short_name": "CrewSynx",
-	"description": "Self-hosted workforce management. Manage projects, attendance, team chat, and analytics — buy a lifetime license and deploy anywhere.",
+	"description": "Self-hosted workforce management. Manage projects, attendance, and analytics — buy a lifetime license and deploy anywhere.",
 	"start_url": "/",
 	"scope": "/",
 	"display": "standalone",
